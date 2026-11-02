@@ -1,0 +1,1490 @@
+/* =================================================================
+   RUSSIAN ROULETTE ✕ CASINO PLAYING CARDS ✕ ART DECO NOIR
+   "คิดเหมือนรอด" (High-Stakes Classroom Consensus Game) · SO60110 PIM
+   Omni-Device Responsive: Mobile (320px) → Tablet → Desktop → 4K Projector
+   ================================================================= */
+
+:root {
+  /* 1. Casino Poker Table Felt & Mahogany Rim */
+  --felt-green-radial: radial-gradient(ellipse at 50% 30%, #15462c 0%, #0a291a 45%, #051a10 80%, #020c07 100%);
+  --felt-table-bg: #071f13;
+  --table-mat-bg: radial-gradient(circle at 50% 25%, #123d26 0%, #092316 75%, #05160d 100%);
+  --mahogany-wood: #1c130c;
+  --mahogany-border: #2a1c12;
+  --brass-gold: #d4af37;
+  --brass-glow: rgba(212, 175, 55, 0.45);
+  --gold-gilt: #fbbf24;
+  --gold-foil: linear-gradient(135deg, #fef08a 0%, #d4af37 50%, #854d0e 100%);
+
+  /* 2. Authentic Playing Card Colors */
+  --card-face: #ffffff;
+  --card-face-gradient: linear-gradient(155deg, #ffffff 0%, #faf7f0 55%, #f2ece0 100%);
+  --card-border-outer: #d1d5db;
+  --card-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 22px 44px rgba(0, 0, 0, 0.8), 0 8px 16px rgba(0, 0, 0, 0.45);
+
+  /* Card Suits Colors (Authentic Standard Deck) */
+  --suit-black: #111827;     /* ♠ Spades & ♣ Clubs (Jet Obsidian Black) */
+  --suit-red: #dc2626;       /* ♥ Hearts & ♦ Diamonds (Casino Crimson Red) */
+
+  --choice-a: var(--suit-black);
+  --choice-b: var(--suit-red);
+  --choice-c: var(--suit-red);
+  --choice-d: var(--suit-black);
+
+  /* 3. Russian Roulette Revolver & Cartridge Elements */
+  --gunmetal-dark: #12181e;
+  --gunmetal-light: #2c3842;
+  --bullet-brass: #d4af37;
+  --bullet-primer: #f59e0b;
+  --bullet-spent: #090d10;
+  --bullet-live-glow: 0 0 14px #ef4444, 0 0 28px rgba(239, 68, 68, 0.7);
+
+  /* 4. Telemetry, Status & Ink */
+  --color-ink: #f3f4f6;
+  --color-ink-2: #9ca3af;
+  --color-paper: #092417;
+  --color-paper-2: #0e3321;
+  --color-paper-3: #061910;
+  --color-rule: #1b4931;
+  --color-accent: #d4af37;
+  --color-accent-soft: rgba(212, 175, 55, 0.15);
+  --color-success: #10b981;
+  --color-success-soft: rgba(16, 185, 129, 0.18);
+  --color-danger: #ef4444;
+  --color-danger-soft: rgba(239, 68, 68, 0.22);
+  --color-warning: #f59e0b;
+  --color-shadow: rgba(0, 0, 0, 0.75);
+
+  --gold: #f59e0b;
+  --silver: #cbd5e1;
+  --bronze: #d97706;
+
+  /* Aliases for legacy views */
+  --bg-color: var(--felt-table-bg);
+  --card-bg: var(--color-paper-2);
+  --card-border: var(--color-rule);
+  --primary: var(--brass-gold);
+  --primary-hover: #b45309;
+  --accent: var(--brass-gold);
+  --danger: var(--color-danger);
+  --text-main: var(--color-ink);
+  --text-muted: var(--color-ink-2);
+
+  /* 5. Typography */
+  --font-card: "Georgia", "Times New Roman", "Cinzel", serif;
+  --font-display: "Prompt", "Kanit", "Avenir Next", system-ui, sans-serif;
+  --font-body: "Noto Sans Thai", "Avenir Next", system-ui, -apple-system, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Courier New", monospace;
+
+  /* 6. Spacing, Radii & Easing */
+  --space-3xs: .25rem; --space-2xs: .5rem; --space-xs: .75rem; --space-sm: 1rem;
+  --space-md: 1.5rem; --space-lg: 2rem; --space-xl: 3rem;
+  --radius-sm: .5rem; --radius-md: .85rem; --radius-lg: 1.25rem;
+  --dur-short: 180ms;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+/* Custom Casino Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #04120a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1b4931;
+  border-radius: 99px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brass-gold);
+}
+
+/* =================================================================
+   1. CASINO POKER FELT TABLE BACKGROUND (WITH SAFE AREA SUPPORT)
+   ================================================================= */
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 
+    max(var(--space-sm), env(safe-area-inset-top))
+    max(var(--space-sm), env(safe-area-inset-right))
+    max(var(--space-sm), env(safe-area-inset-bottom))
+    max(var(--space-sm), env(safe-area-inset-left));
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  display: grid;
+  place-items: center;
+
+  background-color: var(--felt-table-bg);
+  background-image: 
+    var(--felt-green-radial),
+    radial-gradient(circle, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 20px 20px;
+}
+
+button, input, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+
+/* =================================================================
+   2. CASINO TABLE MAT CONTAINER (WITH MAHOGANY & BRASS RIM)
+   ================================================================= */
+.container {
+  width: min(100%, 720px);
+  min-width: 0;
+  padding: clamp(var(--space-md), 4.5vw, var(--space-xl));
+  background: var(--table-mat-bg);
+  border: 2px solid var(--brass-gold);
+  border-radius: 24px;
+  box-shadow: 
+    0 0 0 5px var(--mahogany-wood),
+    0 0 0 7px var(--brass-gold),
+    0 30px 80px rgba(0, 0, 0, 0.9),
+    inset 0 0 45px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+
+/* Host Dashboard Expanded Screen Width on Large Monitors */
+.container.host-container {
+  width: min(100%, 880px);
+}
+
+/* Russian Roulette Chamber Telemetry Brass Plaque */
+.container::before {
+  content: "CHAMBER ROUND · RUSSIAN ROULETTE CONSENSUS";
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-bottom: var(--space-md);
+  color: var(--brass-gold);
+  background: rgba(18, 48, 33, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 99px;
+  padding: 4px 14px;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Playing Card Corner Pips on Felt Mat */
+.container::after {
+  content: "♠ ♥ ♦ ♣";
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  color: var(--brass-gold);
+  font-family: var(--font-card);
+  font-size: 1rem;
+  letter-spacing: 0.35em;
+  opacity: 0.65;
+  text-shadow: 0 0 10px var(--brass-glow);
+}
+
+/* =================================================================
+   3. TYPOGRAPHY & GOLD HEADERS
+   ================================================================= */
+h1, h2, h3, p { margin-top: 0; }
+
+h1 {
+  margin-bottom: var(--space-2xs);
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 6.5vw, 3.2rem);
+  font-weight: 850;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-align: left;
+  background: linear-gradient(135deg, #ffffff 40%, #fbbf24 85%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+p.subtitle {
+  margin-bottom: var(--space-lg);
+  color: #cbd5e1;
+  font-size: .95rem;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* =================================================================
+   4. PERSISTENT PLAYER PROFILE HEADER
+   ================================================================= */
+.profile-header-bar, .control-panel-bar, .game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.profile-header-bar {
+  margin: calc(var(--space-xs) * -1) 0 var(--space-lg);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(4, 20, 13, 0.85);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.profile-user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Profile Chip Badge */
+.profile-avatar-circle {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #111827;
+  background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fef3c7 70%, #d97706 100%);
+  border: 2px dashed #92400e;
+  border-radius: 50%;
+  font-family: var(--font-card);
+  font-size: .95rem;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.profile-score-badge {
+  color: var(--brass-gold);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* =================================================================
+   5. FORM CONTROLS & CASINO POKER CHIP AVATARS
+   ================================================================= */
+.form-group { margin-bottom: var(--space-md); }
+
+label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: var(--brass-gold);
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+input[type="text"], select {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0 var(--space-sm);
+  color: #ffffff;
+  background: rgba(5, 23, 15, 0.9);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  font-size: 1rem;
+  transition: border-color var(--dur-short), box-shadow var(--dur-short);
+}
+
+input[type="text"] {
+  font-family: var(--font-mono);
+  letter-spacing: .12em;
+}
+
+input[type="text"]:focus, select:focus {
+  border-color: var(--brass-gold);
+  outline-color: var(--brass-gold);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+}
+
+/* 6 Casino Poker Chips (01 ♠ to 06 ♥) */
+.avatar-selector {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2xs);
+  margin-bottom: var(--space-md);
+}
+
+.avatar-btn {
+  aspect-ratio: 1;
+  min-width: 0;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #fef3c7 50%, #f59e0b 85%, #b45309 100%);
+  color: #111827;
+  border: 2px dashed #78350f;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.avatar-btn::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.avatar-btn .avatar-num {
+  font-family: var(--font-card);
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.avatar-btn .avatar-suit {
+  font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Symbola", serif;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.avatar-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6);
+  border-color: #fff;
+}
+
+.avatar-btn.selected {
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #fef08a 45%, #eab308 80%, #a16207 100%);
+  border: 2.5px solid #fff;
+  box-shadow: 0 0 0 3px var(--brass-gold), 0 8px 24px rgba(212, 175, 55, 0.6);
+  transform: translateY(-5px) scale(1.08);
+}
+
+.avatar-btn.selected .avatar-num {
+  color: #000;
+}
+
+/* Primary Action Button */
+button.btn {
+  width: 100%;
+  min-height: 3.25rem;
+  margin-top: var(--space-2xs);
+  padding: 0 var(--space-md);
+  color: #000;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid var(--brass-gold);
+  border-radius: var(--radius-sm);
+  font-size: .95rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+  transition: transform var(--dur-short), filter var(--dur-short), box-shadow var(--dur-short);
+}
+
+button.btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.55);
+}
+
+button.btn:active { transform: translateY(1px); }
+button.btn:disabled {
+  opacity: .5;
+  cursor: wait;
+  background: #374151;
+  color: #9ca3af;
+  border-color: #4b5563;
+  box-shadow: none;
+}
+
+/* =================================================================
+   6. ROOM BADGE & PLAYER TAGS
+   ================================================================= */
+.room-badge {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  text-align: left;
+  background: radial-gradient(circle at 10% 10%, #153826 0%, #0a2115 100%);
+  color: var(--color-white);
+  border: 1px solid var(--brass-gold);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.room-badge > div:first-child {
+  color: var(--brass-gold);
+  font-size: .75rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.room-badge .code {
+  margin-top: var(--space-xs);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: clamp(2.4rem, 10vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: .14em;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.45);
+}
+
+.badge-count {
+  margin: var(--space-md) 0 var(--space-xs);
+  color: var(--brass-gold);
+  font-weight: 700;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-list {
+  max-height: 12rem;
+  overflow-y: auto;
+  margin-bottom: var(--space-md);
+  padding: var(--space-xs);
+  background: rgba(5, 23, 15, 0.85);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+}
+
+.player-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-3xs);
+  padding: .4rem .7rem;
+  color: #e5e7eb;
+  background: rgba(14, 45, 30, 0.9);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.kick-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 0 4px;
+  font-weight: bold;
+  border-radius: 3px;
+  font-size: 1rem;
+}
+.kick-btn:hover { background: var(--color-danger-soft); }
+
+/* =================================================================
+   7. REVOLVER CYLINDER HUD (ลูกโม่ปืนรัสเซียนรูเล็ตต์ 6 รังเพลิง)
+   ================================================================= */
+.game-header {
+  margin-bottom: var(--space-sm);
+  color: var(--brass-gold);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.cylinder-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, #1f2933 0%, #0c1217 100%);
+  border: 1.5px solid var(--brass-gold);
+  border-radius: 99px;
+  padding: 5px 12px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+/* Bullet Chamber Housing */
+.cylinder-chamber-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #52606d 0%, #1f2933 70%, #0d1318 100%);
+  border: 1.5px solid #627d98;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+/* Spent Chamber: Empty Hollow Casing */
+.cylinder-chamber-dot.spent {
+  background: #090d10;
+  border-color: #243b53;
+  opacity: 0.45;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Active Chamber: Ready in the Firing Pin */
+.cylinder-chamber-dot.active {
+  background: radial-gradient(circle at 40% 40%, #fef08a 0%, #eab308 55%, #a16207 100%);
+  border-color: #fef08a;
+  box-shadow: 
+    0 0 10px rgba(250, 204, 21, 0.9),
+    0 0 20px rgba(234, 179, 8, 0.5);
+  transform: scale(1.3);
+  animation: chamberPulse 1.2s infinite alternate;
+}
+
+/* Live Round Blast */
+.cylinder-chamber-dot.live {
+  background: radial-gradient(circle at 40% 40%, #fecaca 0%, #ef4444 55%, #991b1b 100%);
+  border-color: #f87171;
+  box-shadow: var(--bullet-live-glow);
+  transform: scale(1.35);
+}
+
+@keyframes chamberPulse {
+  from { transform: scale(1.15); box-shadow: 0 0 8px rgba(250, 204, 21, 0.7); }
+  to { transform: scale(1.4); box-shadow: 0 0 16px rgba(250, 204, 21, 1); }
+}
+
+/* Nixie Tube / Retro Amber Glow Timer Bar */
+.timer-bar-container {
+  width: 100%;
+  height: 6px;
+  margin-bottom: var(--space-xs);
+  overflow: hidden;
+  background: #061910;
+  border-radius: 99px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+.timer-bar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  transition: width 0.3s linear, background-color 0.3s ease;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.timer-text {
+  margin-bottom: var(--space-md);
+  color: var(--brass-gold);
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 5vw, 2.6rem);
+  font-weight: 900;
+  text-align: right;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.6), 0 0 30px rgba(217, 119, 6, 0.3);
+}
+
+.timer-text::after {
+  content: " SEC";
+  font-size: .7rem;
+  letter-spacing: .08em;
+  opacity: 0.7;
+}
+
+/* =================================================================
+   8. QUESTION PLAQUE CARD
+   ================================================================= */
+.question-card {
+  min-height: 7rem;
+  margin-bottom: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  color: #ffffff;
+  background: radial-gradient(circle at 50% 0%, #17422c 0%, #0c2619 100%);
+  border: 1.5px solid var(--brass-gold);
+  border-radius: var(--radius-md);
+  font-size: clamp(1.15rem, 4.2vw, 1.85rem);
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 10px 25px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+/* =================================================================
+   9. AUTHENTIC CASINO PLAYING CARDS (หน้าไพ่ของแท้ 100%)
+   ================================================================= */
+.choices-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+/* Card Deal Stagger Animation */
+@keyframes cardDeal {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.choice-btn {
+  min-height: 11rem;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--card-face-gradient);
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+  animation: cardDeal 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.choice-btn:nth-child(1) { animation-delay: 0.05s; }
+.choice-btn:nth-child(2) { animation-delay: 0.12s; }
+.choice-btn:nth-child(3) { animation-delay: 0.19s; }
+.choice-btn:nth-child(4) { animation-delay: 0.26s; }
+
+/* Real Card Inner Filigree Border (กรอบเส้นประดับคู่ขอบไพ่) */
+.choice-btn::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
+  outline: 1px solid rgba(0, 0, 0, 0.06);
+  outline-offset: -3px;
+  border-radius: 9px;
+  pointer-events: none;
+  transition: border-color 0.2s ease, outline-color 0.2s ease;
+}
+
+/* Dual Corner Indices (Rank on top, Suit underneath) */
+.card-pip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.card-pip.top-left {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+}
+
+.card-pip.bottom-right {
+  position: absolute;
+  bottom: 9px;
+  right: 9px;
+  transform: rotate(180deg);
+}
+
+.pip-rank {
+  font-family: var(--font-card);
+  font-size: clamp(1.35rem, 3.8vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.pip-suit {
+  font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Symbola", serif;
+  font-size: clamp(1.05rem, 3vw, 1.35rem);
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* Card Body & Center Text */
+.card-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+  padding: 16px 24px;
+  z-index: 2;
+}
+
+.card-text {
+  color: #111827;
+  font-size: clamp(0.92rem, 2.8vw, 1.15rem);
+  font-weight: 750;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* Large Center Suit Watermark (ลายน้ำดอกไพ่ตรงกลาง) */
+.card-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(4.5rem, 12vw, 6.2rem);
+  font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Symbola", serif;
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Suit Colors: Spades ♠ & Clubs ♣ (Jet Black) */
+.choice-btn.a .pip-rank,
+.choice-btn.a .pip-suit,
+.choice-btn.d .pip-rank,
+.choice-btn.d .pip-suit {
+  color: var(--suit-black);
+}
+
+.choice-btn.a .card-watermark,
+.choice-btn.d .card-watermark {
+  color: var(--suit-black);
+}
+
+.choice-btn.a::after,
+.choice-btn.d::after {
+  border-color: rgba(17, 24, 39, 0.22);
+  outline-color: rgba(17, 24, 39, 0.08);
+}
+
+/* Suit Colors: Hearts ♥ & Diamonds ♦ (Casino Crimson Red) */
+.choice-btn.b .pip-rank,
+.choice-btn.b .pip-suit,
+.choice-btn.c .pip-rank,
+.choice-btn.c .pip-suit {
+  color: var(--suit-red);
+}
+
+.choice-btn.b .card-watermark,
+.choice-btn.c .card-watermark {
+  color: var(--suit-red);
+}
+
+.choice-btn.b::after,
+.choice-btn.c::after {
+  border-color: rgba(220, 38, 38, 0.25);
+  outline-color: rgba(220, 38, 38, 0.10);
+}
+
+/* Card Hover: 3D Lift & 1-Degree Hand Tilt */
+.choice-btn:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--card-shadow-hover);
+  border-color: #9ca3af;
+}
+
+.choice-btn:nth-child(1):hover {
+  transform: translateY(-8px) scale(1.02) rotate(-1.2deg);
+}
+
+.choice-btn:nth-child(2):hover {
+  transform: translateY(-8px) scale(1.02) rotate(1.2deg);
+}
+
+.choice-btn:nth-child(3):hover {
+  transform: translateY(-8px) scale(1.02) rotate(-1.2deg);
+}
+
+.choice-btn:nth-child(4):hover {
+  transform: translateY(-8px) scale(1.02) rotate(1.2deg);
+}
+
+.choice-btn:focus-visible {
+  outline: 3px solid var(--brass-gold);
+  outline-offset: 3px;
+}
+
+.choice-btn:active {
+  transform: translateY(-2px);
+}
+
+/* Card Selected State */
+.choice-btn.selected {
+  background: #fffdf5;
+  border: 2px solid var(--brass-gold);
+  box-shadow: 
+    0 0 0 3px var(--brass-gold),
+    0 16px 36px rgba(0, 0, 0, 0.7),
+    0 0 25px var(--brass-glow);
+  transform: translateY(-10px) scale(1.03);
+}
+
+.choice-btn.selected::before {
+  content: "✓ เลือกล็อกแล้ว";
+  position: absolute;
+  top: 8px;
+  right: 28px;
+  background: var(--brass-gold);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.choice-btn.disabled, .choice-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =================================================================
+   10. RUSSIAN ROULETTE DRAMA BANNERS (รอดชีวิต vs ตกรอบ)
+   ================================================================= */
+.status-banner {
+  margin-bottom: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid;
+  border-top-width: 4px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.status-banner h2 {
+  margin-bottom: var(--space-3xs);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+/* Survived: Blank Chamber Click */
+.status-banner.survived {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.16);
+  border-color: #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+}
+
+/* Eliminated: BANG! Live Round Blast */
+.status-banner.eliminated {
+  color: #f87171;
+  background: rgba(220, 38, 38, 0.18);
+  border-color: #dc2626;
+  box-shadow: 0 0 25px rgba(220, 38, 38, 0.4);
+  animation: gunshotShake 0.4s ease-in-out;
+}
+
+@keyframes gunshotShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+/* Spectator Mode Banner */
+.status-banner.spectator {
+  background: rgba(10, 33, 22, 0.95);
+  border: 1px dashed var(--brass-gold);
+  border-top: 4px solid var(--brass-gold);
+  color: #f3f4f6;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.tag-spectator {
+  color: var(--brass-gold) !important;
+  font-weight: 700;
+}
+
+/* Score Breakdown Card */
+#score-breakdown-card {
+  background: rgba(5, 23, 15, 0.9) !important;
+  border: 1px solid var(--brass-gold) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Result Chart Bars */
+.chart-row { margin-bottom: var(--space-md); }
+.chart-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-2xs);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.chart-bar-bg {
+  width: 100%;
+  height: .85rem;
+  overflow: hidden;
+  background: #061910;
+  border: 1px solid #14492e;
+  border-radius: 99px;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  min-width: 4px;
+  border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chart-bar-fill.majority-win {
+  box-shadow: 0 0 12px var(--brass-gold);
+  border: 1px solid #fff;
+}
+
+/* =================================================================
+   11. WINNER & OLYMPIC PODIUM & FUN STATS
+   ================================================================= */
+.winner-box {
+  background: radial-gradient(circle at 50% 50%, #2a2214 0%, #16140e 100%);
+  border: 2px solid var(--brass-gold);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  text-align: center;
+  box-shadow: 0 0 35px rgba(212, 175, 55, 0.4);
+}
+
+.winner-title {
+  color: var(--brass-gold);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.winner-name {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  font-weight: 900;
+  margin-top: 6px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Olympic Podium */
+.podium-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  margin: var(--space-lg) 0;
+  height: 180px;
+}
+
+.podium-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: center;
+}
+
+.podium-pill {
+  width: 100%;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-weight: 900;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.podium-1 .podium-pill {
+  height: 130px;
+  background: linear-gradient(180deg, #fbbf24 0%, #b45309 100%);
+  color: #000;
+  box-shadow: 0 0 25px rgba(251, 191, 36, 0.5);
+}
+
+.podium-2 .podium-pill {
+  height: 95px;
+  background: linear-gradient(180deg, #cbd5e1 0%, #475569 100%);
+  color: #000;
+  box-shadow: 0 0 15px rgba(203, 213, 225, 0.3);
+}
+
+.podium-3 .podium-pill {
+  height: 70px;
+  background: linear-gradient(180deg, #d97706 0%, #78350f 100%);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(217, 119, 6, 0.3);
+}
+
+.podium-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* Fun Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.stat-card {
+  background: rgba(5, 23, 15, 0.85);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.stat-card-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--brass-gold);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 4px;
+}
+
+.stat-card-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* Confetti Canvas */
+#confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Leaderboard Table */
+.leaderboard-table {
+  width: 100%;
+  margin-bottom: var(--space-md);
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.leaderboard-table th {
+  padding: var(--space-xs);
+  color: var(--brass-gold);
+  border-bottom: 2px solid var(--color-rule);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.leaderboard-table td {
+  padding: var(--space-xs);
+  border-bottom: 1px solid var(--color-rule);
+  color: #e5e7eb;
+}
+
+.rank-1 td {
+  color: #fef08a;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.rank-2 td { color: var(--silver); font-weight: 700; }
+.rank-3 td { color: #fcd34d; font-weight: 700; }
+
+/* Control Panel & Toggles */
+.control-panel-bar {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(4, 20, 13, 0.85);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  color: var(--color-ink);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle-label input { accent-color: var(--brass-gold); }
+
+/* Volume Slider Box */
+.volume-control-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-ink-2);
+}
+
+.volume-slider {
+  width: 65px;
+  height: 4px;
+  accent-color: var(--brass-gold);
+  cursor: pointer;
+}
+
+.btn-leave-room {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn-leave-room:hover {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+}
+
+/* Spinner & Error */
+.spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: var(--space-md) auto;
+  border: 2px solid var(--color-rule);
+  border-top-color: var(--brass-gold);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.error-msg {
+  min-height: 1.25rem;
+  margin-top: var(--space-xs);
+  color: var(--color-danger);
+  font-size: .85rem;
+  text-align: left;
+}
+
+a {
+  color: var(--color-ink-2) !important;
+  text-underline-offset: .2em;
+}
+a:hover {
+  color: var(--brass-gold) !important;
+}
+
+#audio-unlock-overlay {
+  background: rgba(6, 18, 12, 0.95) !important;
+}
+#audio-unlock-overlay h2 {
+  color: var(--brass-gold) !important;
+}
+#audio-unlock-overlay p {
+  color: #cbd5e1 !important;
+}
+
+/* Reconnection HUD */
+.reconnect-hud {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #092015;
+  color: #fff;
+  border: 1px solid var(--brass-gold);
+  border-radius: 99px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+}
+
+.reconnect-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--brass-gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* =================================================================
+   12. OMNI-DEVICE RESPONSIVENESS (320px → 4K CLASSROOM PROJECTOR)
+   ================================================================= */
+
+/* A. Ultra-Compact Mobile (≤350px - iPhone SE 1st, Galaxy Fold Cover) */
+@media (max-width: 350px) {
+  body {
+    padding: 6px;
+  }
+  .container {
+    padding: 12px 10px;
+    border-radius: 14px;
+  }
+  .container::before {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    letter-spacing: 0.08em;
+  }
+  .container::after {
+    display: none;
+  }
+  .choices-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .choice-btn {
+    min-height: 8.5rem;
+    padding: 6px;
+  }
+  .choice-btn .card-pip.top-left {
+    top: 4px;
+    left: 4px;
+  }
+  /* Hide inverted bottom-right pip on ultra-small screens to maximize text area */
+  .choice-btn .card-pip.bottom-right {
+    display: none;
+  }
+  .choice-btn .card-body {
+    padding: 4px 6px;
+  }
+  .choice-btn .card-text {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+  .choice-btn .card-watermark {
+    font-size: 3.5rem;
+  }
+  .avatar-selector {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .room-badge .code {
+    font-size: 2.2rem;
+  }
+}
+
+/* B. Standard Smartphones (351px - 520px - iPhone 14/15/16, Galaxy S24) */
+@media (min-width: 351px) and (max-width: 520px) {
+  body {
+    padding: var(--space-xs);
+    place-items: start center;
+  }
+  .container {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+  .container::before {
+    font-size: 0.62rem;
+    padding: 3px 10px;
+  }
+  .container::after {
+    top: 14px;
+    right: 14px;
+    font-size: 0.85rem;
+  }
+  .choices-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .choice-btn {
+    min-height: 9.8rem;
+    padding: 8px;
+  }
+  .choice-btn .card-pip.top-left {
+    top: 6px;
+    left: 6px;
+  }
+  .choice-btn .card-pip.bottom-right {
+    bottom: 6px;
+    right: 6px;
+  }
+  .choice-btn .pip-rank {
+    font-size: 1.25rem;
+  }
+  .choice-btn .pip-suit {
+    font-size: 1rem;
+  }
+  .choice-btn .card-body {
+    padding: 8px 10px;
+  }
+  .choice-btn .card-text {
+    font-size: 0.94rem;
+    line-height: 1.38;
+  }
+  .choice-btn .card-watermark {
+    font-size: 4.4rem;
+  }
+  .avatar-selector {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .control-panel-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .control-panel-bar .btn {
+    width: 100% !important;
+  }
+  .room-badge .code {
+    letter-spacing: .08em;
+  }
+}
+
+/* C. Tablets & Medium Displays (521px - 840px - iPad Mini / Air) */
+@media (min-width: 521px) and (max-width: 840px) {
+  .container {
+    padding: var(--space-lg);
+    border-radius: 20px;
+  }
+  .choices-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .choice-btn {
+    min-height: 11.5rem;
+    padding: 14px;
+  }
+  .choice-btn .card-body {
+    padding: 14px 20px;
+  }
+  .choice-btn .card-text {
+    font-size: 1.1rem;
+  }
+}
+
+/* D. Desktop & Large Laptops (841px - 1199px) */
+@media (min-width: 841px) and (max-width: 1199px) {
+  .container.host-container {
+    width: min(100%, 960px);
+  }
+}
+
+/* E. Classroom Projector & 4K Displays (≥1200px or .theater-mode) */
+@media (min-width: 1200px) {
+  .container.host-container {
+    width: min(100%, 1240px);
+  }
+  .container.host-container .question-card {
+    min-height: 8.5rem;
+    font-size: 1.85rem;
+    padding: 24px 32px;
+  }
+  .container.host-container .choices-grid {
+    gap: 16px;
+  }
+  .container.host-container .choice-btn {
+    min-height: 13.5rem;
+    padding: 18px 22px;
+  }
+  .container.host-container .choice-btn .card-text {
+    font-size: 1.35rem;
+    line-height: 1.5;
+  }
+  .container.host-container .choice-btn .pip-rank {
+    font-size: 2rem;
+  }
+  .container.host-container .choice-btn .pip-suit {
+    font-size: 1.6rem;
+  }
+  .container.host-container .choice-btn .card-watermark {
+    font-size: 7.5rem;
+  }
+  .container.host-container .timer-text {
+    font-size: 3rem;
+  }
+}
+
+/* F. Dedicated Classroom Projector Mode (.theater-mode) */
+body.theater-mode {
+  padding: 10px;
+}
+body.theater-mode .container.host-container {
+  width: min(100%, 1400px);
+  border-width: 3px;
+  box-shadow: 
+    0 0 0 6px #1c130c,
+    0 0 0 9px #d4af37,
+    0 35px 90px rgba(0, 0, 0, 0.95);
+}
+body.theater-mode #host-question-preview {
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem) !important;
+  line-height: 1.4 !important;
+  min-height: 9rem;
+  padding: 24px 36px;
+}
+body.theater-mode #host-options-preview {
+  gap: 20px;
+}
+body.theater-mode #host-options-preview .choice-btn {
+  min-height: 15rem;
+  padding: 20px 24px;
+}
+body.theater-mode #host-options-preview .choice-btn .card-text {
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-weight: 850;
+  line-height: 1.45;
+}
+body.theater-mode #host-options-preview .choice-btn .pip-rank {
+  font-size: 2.3rem;
+}
+body.theater-mode #host-options-preview .choice-btn .pip-suit {
+  font-size: 1.8rem;
+}
+body.theater-mode #host-options-preview .choice-btn .card-watermark {
+  font-size: 9rem;
+}
+body.theater-mode #host-timer-text {
+  font-size: 2.2rem !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

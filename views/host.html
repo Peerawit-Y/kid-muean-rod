@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>คิดเหมือนรอด - Host Presentation Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      .container {
+        max-width: 860px;
+        transition: max-width 0.3s ease;
+      }
+      .qr-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 17, 23, 0.95);
+        z-index: 10000;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .qr-modal img {
+        width: 320px;
+        height: 320px;
+        background: #fff;
+        padding: 12px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      }
+      .sheet-box {
+        background: var(--color-paper);
+        border: 1px dashed var(--color-rule);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        margin-bottom: 16px;
+      }
+      .badge-sheet-status {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Audio Unlock Overlay -->
+    <div id="audio-unlock-overlay" style="position: fixed; inset: 0; background: rgba(13,17,23,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center;">
+      <h2 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 12px;">เปิดระบบเสียงห้องเรียน</h2>
+      <p style="color: var(--text-muted); max-width: 440px; margin-bottom: 24px; line-height: 1.5;">
+        แตะปุ่มเพื่อเปิดเสียงนับถอยหลัง เอฟเฟกต์เฉลย ดนตรีตื่นเต้น และเพลงฉลองชัยชนะ
+      </p>
+      <button class="btn" id="btn-unlock-sound" style="max-width: 300px; font-size: 1.2rem; background: var(--accent);" onclick="dismissAudioOverlay()">
+        เข้าสู่หน้าควบคุมและเปิดเสียง
+      </button>
+    </div>
+
+    <!-- QR Code Enlarge Modal for Classroom Projector -->
+    <div id="qr-enlarge-modal" class="qr-modal" onclick="closeQrModal()">
+      <h2 style="color: #fff; font-size: 1.6rem; margin-bottom: 8px;">สแกนเข้าร่วมเกม</h2>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">
+        รหัสห้อง: <strong id="modal-room-code" style="color: var(--primary); font-size: 2rem; letter-spacing: 4px;">-----</strong>
+      </p>
+      <img id="modal-qr-img" src="" alt="Classroom QR Code" />
+      <p style="color: var(--text-muted); margin-top: 16px; font-size: 0.9rem;">(แตะที่ใดก็ได้เพื่อปิด)</p>
+    </div>
+
+    <div class="container host-container">
+      <h1>Host Dashboard</h1>
+      <p class="subtitle">100 คน 100 ความคิด — Classroom Edition (Real-Time WebSocket)</p>
+
+      <div class="control-panel-bar">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-auto" checked>
+            <span>Auto-Pilot (เริ่มข้อต่อไปอัตโนมัติ)</span>
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-bgm" checked onchange="toggleBGM(this.checked)">
+            <span>เสียงดนตรี BGM</span>
+          </label>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn" id="btn-theater-mode" style="width: auto; padding: 5px 12px; margin: 0; font-size: 0.8rem; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;" onclick="toggleTheaterMode()">
+            🖥️ โหมดโปรเจกเตอร์
+          </button>
+          <button type="button" class="btn" style="width: auto; padding: 5px 12px; margin: 0; font-size: 0.8rem; background: var(--color-ink);" onclick="testSound()">
+            ทดสอบเสียง
+          </button>
+          <button type="button" class="btn" style="width: auto; min-height: 2rem; padding: 4px 10px; margin: 0; font-size: 0.78rem; background: var(--color-danger);" onclick="handleCloseRoom()">
+            ปิดห้องนี้
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. Create Room View -->
+      <div id="host-create-view">
+        <div class="sheet-box">
+          <label style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">
+            📊 เชื่อมต่อ Google Sheets คลังคำถาม (ไม่บังคับ)
+          </label>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">
+            หากมี Google Sheets สามารถวางลิงก์หรือ Spreadsheet ID เพื่อดึงคำถามวิชาของคุณได้ทันที (ต้องเปิดแชร์เป็น "ทุกคนที่มีลิงก์มีสิทธิ์ดู")
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="text" id="input-sheet-url" placeholder="วางลิงก์ Google Sheets หรือ ID ที่นี่ (เช่น 1BxiMVs...)" style="flex: 1; min-width: 250px;">
+            <button type="button" class="btn" style="width: auto; padding: 0 16px; margin: 0; background: var(--color-ink); font-size: 0.85rem;" onclick="handlePreloadSheet()">
+              ทดสอบดึงคำถาม
+            </button>
+          </div>
+          <div id="create-sheet-status" class="badge-sheet-status" style="color: var(--color-success);">
+            ✅ พร้อมใช้งานคลังคำถามเริ่มต้น 50 ข้อ
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">จำนวนรอบการแข่งขัน</label>
+          <select id="select-rounds">
+            <option value="3">3 รอบ (แบบกระชับ รวดเร็ว 5 นาที)</option>
+            <option value="5" selected>5 รอบ (แนะนำสำหรับคาบเรียน 10-15 นาที)</option>
+            <option value="8">8 รอบ (ระดับปานกลาง)</option>
+            <option value="10">10 รอบ (มาตรฐาน)</option>
+            <option value="15">15 รอบ (Battle Royale)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">
+            🔒 รหัส PIN ควบคุมห้อง (สำหรับอาจารย์ / ผู้ดำเนินรายการ)
+          </label>
+          <input type="text" id="input-host-pin" value="1234" maxlength="8" placeholder="เช่น 1234" style="font-family: var(--font-mono); letter-spacing: 2px;">
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+            *ป้องกันไม่ให้นักศึกษาแอบเปิดหน้า Host มากดสั่งการห้องเอง (ค่าเริ่มต้น: 1234)
+          </div>
+        </div>
+
+        <button class="btn" onclick="handleCreateRoom()">สร้างห้องเกมใหม่ (Open Classroom Room)</button>
+        <div id="host-err" class="error-msg"></div>
+      </div>
+
+      <!-- 2. Host Monitor View -->
+      <div id="host-monitor-view" style="display: none;">
+        
+        <!-- Room Code & QR Code Container -->
+        <div class="room-badge">
+          <div>
+            <div>รหัสเข้าห้องสำหรับนักศึกษา</div>
+            <div class="code" id="host-room-code">-----</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div id="host-qr-box" style="background: #fff; padding: 6px; border-radius: var(--radius-sm); cursor: pointer;" onclick="openQrModal()" title="คลิกเพื่อขยาย QR Code เต็มจอ">
+              <img id="qr-img" src="" alt="QR Code" style="width: 88px; height: 88px; display: block;" />
+            </div>
+            <button type="button" onclick="openQrModal()" style="background: none; border: none; color: var(--primary); font-size: 0.75rem; cursor: pointer; text-decoration: underline;">
+              🔍 ขยาย QR เต็มจอ
+            </button>
+          </div>
+        </div>
+
+        <!-- Host Quick Controls: เวลาต่อข้อ & ข้ามข้อ -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="margin: 0; font-size: 0.8rem;">เวลาข้อนี้:</label>
+            <select id="select-round-timer" style="min-height: 2rem; padding: 2px 8px; width: auto; font-size: 0.85rem;">
+              <option value="15">15 วิ (ด่วน)</option>
+              <option value="25" selected>25 วิ (ปกติ)</option>
+              <option value="40">40 วิ (คิดวิเคราะห์)</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn" id="btn-sync-sheet-live" style="width: auto; min-height: 2rem; padding: 2px 10px; margin: 0; font-size: 0.78rem; background: var(--color-ink);" onclick="handleLiveSyncSheet()">
+              🔄 รีเฟรชคำถามจากชีต
+            </button>
+            <button type="button" class="btn" id="btn-skip-round" style="width: auto; min-height: 2rem; padding: 2px 10px; margin: 0; font-size: 0.78rem; background: var(--color-danger); display: none;" onclick="handleSkipRound()">
+              ข้ามคำถามนี้
+            </button>
+          </div>
+        </div>
+
+        <div class="game-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="host-round-text">สถานะ: LOBBY</span>
+            <div class="cylinder-hud" id="host-cylinder-hud" title="รังเพลิงลูกโม่ (Revolver Chambers)">
+              <span class="cylinder-chamber-dot" id="h-ch-1"></span>
+              <span class="cylinder-chamber-dot" id="h-ch-2"></span>
+              <span class="cylinder-chamber-dot" id="h-ch-3"></span>
+              <span class="cylinder-chamber-dot" id="h-ch-4"></span>
+              <span class="cylinder-chamber-dot" id="h-ch-5"></span>
+              <span class="cylinder-chamber-dot" id="h-ch-6"></span>
+            </div>
+          </div>
+          <span id="host-timer-text" style="color: var(--primary); font-size: 1.5rem; font-weight: 800;">--:--</span>
+        </div>
+
+        <div style="background: var(--color-paper); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
+          <span id="host-stat-box">
+            <span id="host-stat-label">ผู้เล่นในห้อง:</span> 
+            <strong id="host-answered-stat" style="color: var(--primary); font-size: 1.15rem;">0</strong>
+            <span id="host-stat-sep" style="display: none;"> / </span>
+            <span id="host-alive-stat" style="display: none; font-size: 1.15rem;">0</span> คน
+            <span id="host-stat-extra" style="color: var(--text-muted); font-size: 0.82rem; margin-left: 4px;"></span>
+          </span>
+          <span id="host-early-hint" style="color: var(--gold); display: none; font-weight: 600;">ตอบครบแล้ว · กำลังสรุปผล</span>
+        </div>
+
+        <div id="host-question-preview" class="question-card" style="display: none; font-size: 1.25rem; font-weight: 700; line-height: 1.5;">
+          คำถามจะแสดงที่นี่
+        </div>
+
+        <!-- 4 Authentic Playing Cards Preview for Classroom Display -->
+        <div id="host-options-preview" class="choices-grid" style="display: none; margin-bottom: 16px;">
+          <div class="choice-btn a" style="cursor: default;">
+            <div class="card-pip top-left"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+            <div class="card-body">
+              <div class="card-watermark">♠</div>
+              <span class="card-text" id="host-opt-a">-</span>
+            </div>
+            <div class="card-pip bottom-right"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+          </div>
+          <div class="choice-btn b" style="cursor: default;">
+            <div class="card-pip top-left"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
+            <div class="card-body">
+              <div class="card-watermark">♥</div>
+              <span class="card-text" id="host-opt-b">-</span>
+            </div>
+            <div class="card-pip bottom-right"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
+          </div>
+          <div class="choice-btn c" style="cursor: default;">
+            <div class="card-pip top-left"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
+            <div class="card-body">
+              <div class="card-watermark">♦</div>
+              <span class="card-text" id="host-opt-c">-</span>
+            </div>
+            <div class="card-pip bottom-right"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
+          </div>
+          <div class="choice-btn d" style="cursor: default;">
+            <div class="card-pip top-left"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+            <div class="card-body">
+              <div class="card-watermark">♣</div>
+              <span class="card-text" id="host-opt-d">-</span>
+            </div>
+            <div class="card-pip bottom-right"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+          </div>
+        </div>
+
+        <!-- Olympic Podium -->
+        <div id="host-podium-wrap" style="display: none;">
+          <div class="podium-container" id="host-podium-box"></div>
+        </div>
+
+        <!-- Fun Stats Grid -->
+        <div id="host-fun-stats" class="stats-grid" style="display: none;">
+          <div class="stat-card">
+            <div class="stat-card-title">⚡ The Flash (ตอบไวสุด)</div>
+            <div class="stat-card-val" id="stat-flash-name">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">🔥 รอบสูสีที่สุด</div>
+            <div class="stat-card-val" id="stat-close-round">-</div>
+          </div>
+        </div>
+
+        <div id="host-result-bars" style="display: none; margin-bottom: 20px;"></div>
+
+        <div id="auto-status-hint" style="text-align: center; color: var(--gold); font-size: 1rem; font-weight: 600; margin-bottom: 12px; display: none;">
+          ระบบจะเริ่มรอบต่อไปอัตโนมัติใน <span id="auto-sec-left">6</span> วินาที
+        </div>
+
+        <div id="host-leaderboard-box" style="display: none; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 style="font-size: 1.15rem; margin: 0; color: var(--primary);">ตารางคะแนนรวม</h3>
+            <button type="button" class="btn" id="btn-export-csv" style="width: auto; padding: 4px 12px; margin: 0; font-size: 0.82rem; background: var(--color-success);" onclick="handleExportCsv()">
+              📥 ดาวน์โหลดคะแนนสำหรับ Google Sheets (CSV)
+            </button>
+          </div>
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">อันดับ</th>
+                <th>ชื่อผู้เล่น</th>
+                <th style="text-align: right;">คะแนนเกม</th>
+                <th style="text-align: right;">แต้มหยั่งรู้ (ผู้ชม)</th>
+              </tr>
+            </thead>
+            <tbody id="host-lb-body"></tbody>
+          </table>
+        </div>
+
+        <label style="margin-top: 14px; font-weight: 600;">
+          รายชื่อผู้เล่นในห้อง (<strong id="host-player-count" style="color: var(--primary);">0</strong> คน) 
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(คลิก [×] เพื่อเตะออก)</span>
+        </label>
+        <div class="player-list" id="host-player-tags" style="max-height: 150px;"></div>
+
+        <button class="btn" id="btn-action" style="background: var(--primary); margin-top: 16px; font-size: 1.15rem;" onclick="handleHostAction()">
+          เริ่มรอบที่ 1 (Start Game) · 0 คนพร้อม
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // ==========================================
+      // 1. Web Audio Synthesizer (SFX & Tension BGM)
+      // ==========================================
+      let audioCtx = null;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioClass) audioCtx = new AudioClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function dismissAudioOverlay() {
+        try {
+          getAudioContext();
+          SFX.click();
+        } catch(e) {}
+        const overlay = document.getElementById("audio-unlock-overlay");
+        if (overlay) overlay.style.display = "none";
+      }
+
+      function testSound() {
+        SFX.reveal();
+      }
+
+      let bgmInterval = null;
+      let isBgmEnabled = true;
+
+      function toggleBGM(enabled) {
+        isBgmEnabled = enabled;
+        if (!enabled) stopBGM();
+      }
+
+      function startBGM() {
+        if (!isBgmEnabled || bgmInterval) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const bassNotes = [110.00, 110.00, 130.81, 123.47];
+        let step = 0;
+
+        function playStep() {
+          if (!isBgmEnabled) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(bassNotes[step % bassNotes.length], ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+          step++;
+        }
+
+        playStep();
+        bgmInterval = setInterval(playStep, 450);
+      }
+
+      function stopBGM() {
+        if (bgmInterval) {
+          clearInterval(bgmInterval);
+          bgmInterval = null;
+        }
+      }
+
+      const SFX = {
+        click: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(1200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.03);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.03);
+        },
+        cylinderSpin: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+          for (let i = 0; i < 7; i++) {
+            const t = now + (i * 0.05);
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(1500 - (i * 90), t);
+            osc.frequency.exponentialRampToValueAtTime(350, t + 0.025);
+            gain.gain.setValueAtTime(0.22, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.025);
+          }
+        },
+        gunshot: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+
+          // Heavy Sub Punch
+          const bass = ctx.createOscillator();
+          const bassGain = ctx.createGain();
+          bass.type = "sawtooth";
+          bass.frequency.setValueAtTime(240, now);
+          bass.frequency.exponentialRampToValueAtTime(25, now + 0.55);
+          bassGain.gain.setValueAtTime(0.6, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+          bass.connect(bassGain);
+          bassGain.connect(ctx.destination);
+          bass.start(now);
+          bass.stop(now + 0.6);
+
+          // Gunpowder Blast Noise
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(90, now);
+          osc.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+          gain.gain.setValueAtTime(0.45, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        },
+        blankClick: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(1800, now);
+          osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        },
+        tick: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.12, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.04);
+        },
+        dangerTick: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(150, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.45, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.12);
+        },
+        timeUp: function() {
+          stopBGM();
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(220, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.35);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+        },
+        reveal: function() {
+          stopBGM();
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const notes = [392.00, 493.88, 587.33, 783.99]; // G Chord
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.04));
+            gain.gain.setValueAtTime(0, ctx.currentTime + (idx * 0.04));
+            gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + (idx * 0.04) + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (idx * 0.04) + 0.45);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + (idx * 0.04));
+            osc.stop(ctx.currentTime + (idx * 0.04) + 0.45);
+          });
+        },
+        fanfare: function() {
+          stopBGM();
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const melody = [
+            { f: 523.25, t: 0.0, d: 0.12 },
+            { f: 523.25, t: 0.14, d: 0.12 },
+            { f: 523.25, t: 0.28, d: 0.12 },
+            { f: 659.25, t: 0.42, d: 0.35 },
+            { f: 783.99, t: 0.80, d: 0.6 }
+          ];
+          melody.forEach(n => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(n.f, ctx.currentTime + n.t);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime + n.t);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.t + n.d);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + n.t);
+            osc.stop(ctx.currentTime + n.t + n.d);
+          });
+        },
+        staggerStep: function(step) {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const freqs = [349.23, 440.00, 523.25, 659.25]; // F4, A4, C5, E5 (Suspense Chords)
+          const freq = freqs[(step - 1) % freqs.length];
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(0.28, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+        },
+        drumroll: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+          for (let i = 0; i < 12; i++) {
+            const t = now + (i * 0.05);
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(100 + (i * 12), t);
+            gain.gain.setValueAtTime(0.15 + (i * 0.015), t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.04);
+          }
+        },
+        majorityFanfare: function() {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, High C
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(freq, now + (idx * 0.05));
+            gain.gain.setValueAtTime(0.25, now + (idx * 0.05));
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.05) + 0.7);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + (idx * 0.05));
+            osc.stop(now + (idx * 0.05) + 0.7);
+          });
+        }
+      };
+
+      // ฟังก์ชันเปิด/ปิดโหมดโปรเจกเตอร์ความสว่างสูงสำหรับห้องเรียน
+      function toggleTheaterMode() {
+        document.body.classList.toggle("theater-mode");
+        const isTheater = document.body.classList.contains("theater-mode");
+        try { localStorage.setItem("pim_host_theater_mode", isTheater ? "1" : "0"); } catch(e) {}
+        const btn = document.getElementById("btn-theater-mode");
+        if (btn) {
+          btn.innerText = isTheater ? "☀️ โหมดปกติ" : "🖥️ โหมดโปรเจกเตอร์";
+          btn.style.background = isTheater ? "#fbbf24" : "#0f172a";
+          btn.style.color = isTheater ? "#000" : "#38bdf8";
+        }
+      }
+
+      // โหลดการตั้งค่าโหมดโปรเจกเตอร์ที่บันทึกไว้
+      try {
+        if (localStorage.getItem("pim_host_theater_mode") === "1") {
+          toggleTheaterMode();
+        }
+      } catch(e) {}
+
+      // ==========================================
+      // 2. Real-Time Socket.io Connection
+      // ==========================================
+      const socket = io();
+
+      const hostSession = {
+        roomId: null,
+        roomCode: null,
+        hostToken: null,
+        maxRounds: 5,
+        currentStatus: "LOBBY",
+        currentRound: 0,
+        lastTickSecond: null,
+        isAutoCalculating: false,
+        autoNextTimer: null,
+        sheetId: ""
+      };
+
+      function openQrModal() {
+        const modal = document.getElementById("qr-enlarge-modal");
+        modal.style.display = "flex";
+      }
+
+      function closeQrModal() {
+        const modal = document.getElementById("qr-enlarge-modal");
+        modal.style.display = "none";
+      }
+
+      function isAutoPilotEnabled() {
+        return document.getElementById("chk-auto").checked;
+      }
+
+      function handleCloseRoom() {
+        if (!confirm("ต้องการปิดห้องนี้และกลับไปหน้าสร้างห้องใหม่ใช่หรือไม่?")) return;
+        SFX.click();
+        cancelAutoCountdown();
+        stopBGM();
+        localStorage.removeItem("host_session_backup");
+        document.getElementById("host-monitor-view").style.display = "none";
+        document.getElementById("host-create-view").style.display = "block";
+      }
+
+      function handlePreloadSheet() {
+        const input = document.getElementById("input-sheet-url").value.trim();
+        const statusEl = document.getElementById("create-sheet-status");
+        if (!input) {
+          statusEl.innerText = "กรุณากรอกลิงก์หรือ Spreadsheet ID";
+          statusEl.style.color = "var(--danger)";
+          return;
+        }
+        statusEl.innerText = "กำลังทดสอบเชื่อมต่อ Google Sheets...";
+        statusEl.style.color = "var(--primary)";
+
+        // จำลองการทดสอบดึงจากชีต
+        fetch(`https://docs.google.com/spreadsheets/d/${extractSheetId(input)}/gviz/tq?tqx=out:csv&sheet=Questions`)
+          .then(res => {
+            if (!res.ok) throw new Error("ไม่สามารถดาวน์โหลดได้ (ตรวจสิทธิ์การแชร์ 'ทุกคนที่มีลิงก์มีสิทธิ์ดู')");
+            return res.text();
+          })
+          .then(csv => {
+            const count = csv.split("\n").filter(l => l.trim().length > 0).length - 1;
+            statusEl.innerText = `✅ ตรวจพบคำถาม ${count} ข้อใน Google Sheets พร้อมใช้งาน!`;
+            statusEl.style.color = "var(--color-success)";
+            hostSession.sheetId = input;
+          })
+          .catch(err => {
+            statusEl.innerText = "❌ เกิดข้อผิดพลาด: " + err.message;
+            statusEl.style.color = "var(--danger)";
+          });
+      }
+
+      function extractSheetId(input) {
+        const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        return match ? match[1] : input.trim();
+      }
+
+      function handleCreateRoom() {
+        SFX.click();
+        const errBox = document.getElementById("host-err");
+        const selectRounds = Number(document.getElementById("select-rounds").value) || 5;
+        const sheetInput = document.getElementById("input-sheet-url").value.trim();
+        const pinInput = document.getElementById("input-host-pin") ? document.getElementById("input-host-pin").value.trim() : "1234";
+        errBox.innerText = "กำลังสร้างห้อง...";
+
+        socket.emit("host:create-room", {
+          maxRounds: selectRounds,
+          sheetId: sheetInput,
+          pin: pinInput
+        }, function(res) {
+          if (res.success) {
+            errBox.innerText = "";
+            hostSession.roomId = res.roomId;
+            hostSession.roomCode = res.roomCode;
+            hostSession.hostToken = res.hostToken;
+            hostSession.maxRounds = res.maxRounds;
+
+            try {
+              localStorage.setItem("host_session_backup", JSON.stringify({
+                roomId: res.roomId,
+                roomCode: res.roomCode,
+                hostToken: res.hostToken,
+                maxRounds: res.maxRounds
+              }));
+            } catch(e) {}
+
+            document.getElementById("host-create-view").style.display = "none";
+            document.getElementById("host-monitor-view").style.display = "block";
+            document.getElementById("host-room-code").innerText = res.roomCode;
+            document.getElementById("modal-room-code").innerText = res.roomCode;
+            document.getElementById("host-round-text").innerText = `เตรียมพร้อม (แข่งทั้งหมด ${res.maxRounds} รอบ)`;
+
+            const playerUrl = window.location.origin + "/?room=" + res.roomCode;
+            const qrSrc = "https://quickchart.io/qr?size=320&text=" + encodeURIComponent(playerUrl);
+            document.getElementById("qr-img").src = qrSrc;
+            document.getElementById("modal-qr-img").src = qrSrc;
+
+            // หากมีการระบุ Sheet ให้ซิงก์ทันที
+            if (sheetInput) {
+              socket.emit("host:sync-sheet", {
+                roomId: res.roomId,
+                hostToken: res.hostToken,
+                sheetUrlOrId: sheetInput
+              }, function(sRes) {
+                if (sRes.success) alert(sRes.message);
+              });
+            }
+          } else {
+            errBox.innerText = res.message;
+          }
+        });
+      }
+
+      function handleLiveSyncSheet() {
+        const currentSheet = hostSession.sheetId || prompt("กรุณาระบุ Google Sheets ID หรือ URL คลังคำถาม:");
+        if (!currentSheet) return;
+        SFX.click();
+        const btn = document.getElementById("btn-sync-sheet-live");
+        btn.disabled = true;
+        btn.innerText = "กำลังซิงก์...";
+
+        socket.emit("host:sync-sheet", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken,
+          sheetUrlOrId: currentSheet
+        }, function(res) {
+          btn.disabled = false;
+          btn.innerText = "🔄 รีเฟรชคำถามจากชีต";
+          if (res.success) {
+            hostSession.sheetId = currentSheet;
+            alert(res.message);
+          } else {
+            alert("ซิงก์ไม่สำเร็จ: " + res.message);
+          }
+        });
+      }
+
+      function kickPlayer(playerId, pName) {
+        SFX.click();
+        if (!confirm(`ต้องการเตะ "${pName}" ออกจากห้องใช่หรือไม่?`)) return;
+        socket.emit("host:kick-player", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken,
+          playerId: playerId
+        });
+      }
+
+      function handleSkipRound() {
+        SFX.click();
+        if (!confirm("ต้องการยกเลิกและสุ่มคำถามใหม่ในรอบนี้ใช่หรือไม่?")) return;
+        socket.emit("host:skip-round", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken
+        }, function(res) {
+          if (!res.success) alert("ไม่สามารถข้ามข้อได้");
+        });
+      }
+
+      function handleHostAction() {
+        SFX.click();
+        cancelAutoCountdown();
+
+        if (hostSession.currentStatus === "LOBBY" || hostSession.currentStatus === "RESULT") {
+          handleStartNextRound();
+        } else if (hostSession.currentStatus === "ANSWERING") {
+          SFX.timeUp();
+          triggerAutoCalculate();
+        } else if (hostSession.currentStatus === "GAME_OVER") {
+          if (confirm("ต้องการเริ่มเกมใหม่ทั้งหมดกับผู้เล่นในห้องนี้ใช่หรือไม่?")) {
+            const actBtn = document.getElementById("btn-action");
+            actBtn.disabled = true;
+            actBtn.innerText = "กำลังรีเซ็ต...";
+
+            socket.emit("host:restart-game", {
+              roomId: hostSession.roomId,
+              hostToken: hostSession.hostToken
+            }, function(res) {
+              actBtn.disabled = false;
+              if (res.success) {
+                document.getElementById("host-podium-wrap").style.display = "none";
+                document.getElementById("host-fun-stats").style.display = "none";
+                document.getElementById("host-leaderboard-box").style.display = "none";
+                document.getElementById("host-result-bars").style.display = "none";
+              }
+            });
+          }
+        }
+      }
+
+      function handleStartNextRound() {
+        SFX.click();
+        const actBtn = document.getElementById("btn-action");
+        actBtn.disabled = true;
+        actBtn.innerText = "กำลังเตรียมคำถาม...";
+        const customSec = Number(document.getElementById("select-round-timer").value) || 25;
+
+        socket.emit("host:start-round", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken,
+          duration: customSec
+        }, function(res) {
+          actBtn.disabled = false;
+          if (!res.success) alert(res.message);
+        });
+      }
+
+      function triggerAutoCalculate() {
+        hostSession.isAutoCalculating = true;
+        const actBtn = document.getElementById("btn-action");
+        actBtn.disabled = true;
+        actBtn.innerText = "กำลังประมวลผล Majority...";
+
+        socket.emit("host:end-round-early", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken
+        });
+      }
+
+      function handleExportCsv() {
+        if (!hostSession.roomId) return;
+        window.open("/api/export-results/" + hostSession.roomId, "_blank");
+      }
+
+      // ==========================================
+      // 3. Socket.io Incoming Real-Time Events
+      // ==========================================
+
+      // อัปเดตรายชื่อผู้เล่นทันทีแบบเรียลไทม์ (ไม่มี Polling!)
+      socket.on("room:players-updated", function(data) {
+        const count = data.playerCount || 0;
+        document.getElementById("host-player-count").innerText = count;
+
+        if (hostSession.currentStatus === "LOBBY") {
+          document.getElementById("host-stat-label").innerText = "ผู้เล่นในห้อง:";
+          document.getElementById("host-answered-stat").innerText = count;
+          document.getElementById("host-stat-sep").style.display = "none";
+          document.getElementById("host-alive-stat").style.display = "none";
+          document.getElementById("host-stat-extra").innerText = "";
+
+          const actBtn = document.getElementById("btn-action");
+          if (actBtn && !actBtn.disabled) {
+            actBtn.innerText = `เริ่มรอบที่ 1 (Start Game) · ${count} คนพร้อม`;
+          }
+        }
+
+        const tagsBox = document.getElementById("host-player-tags");
+        tagsBox.innerHTML = data.players.map(p => {
+          const color = p.alive ? "var(--color-ink-2)" : "var(--danger)";
+          const text = p.alive ? escapeHtml(p.name) : `OUT · ${escapeHtml(p.name)}`;
+          const kickBtn = hostSession.currentStatus === "LOBBY" 
+            ? `<button class="kick-btn" onclick="kickPlayer('${p.id}', '${escapeHtml(p.name)}')">×</button>` 
+            : "";
+          return `<span class="player-tag" style="color: ${color};">${text} ${kickBtn}</span>`;
+        }).join("");
+      });
+
+      // รังเพลิงลูกโม่บนหน้าจอ Host (Revolver Chambers)
+      function updateHostCylinder(round, maxRounds) {
+        const activeIdx = ((round - 1) % 6) + 1;
+        for (let i = 1; i <= 6; i++) {
+          const dot = document.getElementById("h-ch-" + i);
+          if (!dot) continue;
+          dot.className = "cylinder-chamber-dot";
+          if (i < activeIdx) {
+            dot.classList.add("spent");
+          } else if (i === activeIdx) {
+            dot.classList.add("active");
+          }
+        }
+      }
+
+      // สัญญาณเริ่มรอบใหม่
+      socket.on("game:round-started", function(data) {
+        hostSession.currentStatus = "ANSWERING";
+        hostSession.currentRound = data.round;
+        startBGM();
+        cancelAutoCountdown();
+        updateHostCylinder(data.round, hostSession.maxRounds);
+        SFX.cylinderSpin();
+
+        const actBtn = document.getElementById("btn-action");
+        const skipBtn = document.getElementById("btn-skip-round");
+        skipBtn.style.display = "inline-block";
+
+        document.getElementById("host-round-text").innerText = `รอบที่ ${data.round} / ${hostSession.maxRounds} (กำลังตอบ)`;
+        document.getElementById("host-timer-text").innerText = `${data.duration}s`;
+        document.getElementById("host-stat-label").innerText = "ตอบแล้ว:";
+        document.getElementById("host-answered-stat").innerText = "0";
+        document.getElementById("host-stat-sep").style.display = "inline";
+        document.getElementById("host-alive-stat").style.display = "inline";
+        document.getElementById("host-alive-stat").innerText = data.totalAlive;
+        document.getElementById("host-stat-extra").innerText = "(รอดชีวิต)";
+
+        const qCard = document.getElementById("host-question-preview");
+        qCard.style.display = "block";
+        qCard.innerText = data.question.question;
+
+        // แสดงหน้าไพ่ 4 ใบ (♠ ♥ ♦ ♣) บนจอโปรเจกเตอร์
+        const optBox = document.getElementById("host-options-preview");
+        if (optBox && data.question) {
+          optBox.style.display = "grid";
+          document.getElementById("host-opt-a").innerText = data.question.optionA;
+          document.getElementById("host-opt-b").innerText = data.question.optionB;
+          document.getElementById("host-opt-c").innerText = data.question.optionC;
+          document.getElementById("host-opt-d").innerText = data.question.optionD;
+        }
+
+        document.getElementById("host-result-bars").style.display = "none";
+        document.getElementById("host-podium-wrap").style.display = "none";
+        document.getElementById("host-fun-stats").style.display = "none";
+        document.getElementById("host-leaderboard-box").style.display = "none";
+        document.getElementById("host-early-hint").style.display = "none";
+
+        actBtn.innerText = "ล็อกคำตอบ & สรุปผลทันที";
+        actBtn.style.background = "var(--danger)";
+        actBtn.disabled = false;
+      });
+
+      // ตัวจับเวลานับถอยหลังจากเซิร์ฟเวอร์ (ตรงกันทุกเครื่อง)
+      socket.on("game:timer-tick", function(data) {
+        const sec = data.remainingSeconds;
+        document.getElementById("host-timer-text").innerText = `${sec}s`;
+
+        if (sec <= 5 && sec > 0) SFX.dangerTick();
+        else if (sec <= 10 && sec > 0) SFX.tick();
+      });
+
+      // อัปเดตจำนวนคนที่ส่งคำตอบแล้วแบบเรียลไทม์
+      socket.on("game:answer-count-update", function(data) {
+        document.getElementById("host-answered-stat").innerText = data.answeredCount;
+        document.getElementById("host-alive-stat").innerText = data.totalAlive;
+
+        if (data.answeredCount >= data.totalAlive && data.totalAlive > 0) {
+          document.getElementById("host-early-hint").style.display = "inline";
+        }
+      });
+
+      // ผลลัพธ์รอบ / จบเกม
+      socket.on("game:round-result", function(data) {
+        stopBGM();
+        document.getElementById("btn-skip-round").style.display = "none";
+        hostSession.isAutoCalculating = false;
+
+        const optBox = document.getElementById("host-options-preview");
+        if (optBox) optBox.style.display = "none";
+
+        const res = data.result;
+        const actBtn = document.getElementById("btn-action");
+
+        if (res.isGameOver) {
+          hostSession.currentStatus = "GAME_OVER";
+          SFX.fanfare();
+          triggerConfetti();
+
+          document.getElementById("host-round-text").innerText = `จบการแข่งขัน (${res.maxRounds} รอบ)`;
+          document.getElementById("host-timer-text").innerText = "END";
+          document.getElementById("host-stat-label").innerText = "ผู้ชนะ / ผู้รอดชีวิต:";
+          document.getElementById("host-answered-stat").innerText = res.aliveCount;
+          document.getElementById("host-stat-sep").style.display = "inline";
+          document.getElementById("host-alive-stat").style.display = "inline";
+          document.getElementById("host-alive-stat").innerText = res.totalPlayers;
+          document.getElementById("host-stat-extra").innerText = "";
+
+          actBtn.innerText = "เริ่มเกมใหม่ (Restart Game)";
+          actBtn.style.background = "var(--gold)";
+          actBtn.style.color = "var(--color-black)";
+          actBtn.disabled = false;
+
+          renderHostGameOver(res, res.leaderboard);
+        } else {
+          hostSession.currentStatus = "RESULT";
+          
+          if (res.eliminatedCount > 0) {
+            SFX.gunshot();
+            setTimeout(SFX.reveal, 400);
+          } else {
+            SFX.blankClick();
+            setTimeout(SFX.reveal, 200);
+          }
+
+          document.getElementById("host-round-text").innerText = `สรุปผลรอบที่ ${res.round} / ${res.maxRounds}`;
+          document.getElementById("host-timer-text").innerText = "จบแล้ว";
+          document.getElementById("host-stat-label").innerText = "ผู้รอดชีวิต:";
+          document.getElementById("host-answered-stat").innerText = res.aliveCount;
+          document.getElementById("host-stat-sep").style.display = "inline";
+          document.getElementById("host-alive-stat").style.display = "inline";
+          document.getElementById("host-alive-stat").innerText = res.totalPlayers;
+          document.getElementById("host-stat-extra").innerText = "(คนทั้งหมด)";
+
+          actBtn.innerText = `เริ่มรอบที่ ${res.round + 1} (Next Round)`;
+          actBtn.style.background = "var(--primary)";
+          actBtn.disabled = false;
+
+          renderHostResult(res);
+
+          if (isAutoPilotEnabled() && !hostSession.autoNextTimer) {
+            startAutoNextCountdown(6, function() {
+              handleStartNextRound();
+            });
+          }
+        }
+      });
+
+      // รีเซ็ตเกมกลับสู่ LOBBY
+      socket.on("game:restarted", function(data) {
+        hostSession.currentStatus = "LOBBY";
+        hostSession.currentRound = 0;
+        document.getElementById("host-round-text").innerText = `เตรียมพร้อม (แข่งทั้งหมด ${hostSession.maxRounds} รอบ)`;
+        document.getElementById("host-timer-text").innerText = "--:--";
+        document.getElementById("host-question-preview").style.display = "none";
+        document.getElementById("host-result-bars").style.display = "none";
+        document.getElementById("host-podium-wrap").style.display = "none";
+        document.getElementById("host-fun-stats").style.display = "none";
+        document.getElementById("host-leaderboard-box").style.display = "none";
+
+        const optBox = document.getElementById("host-options-preview");
+        if (optBox) optBox.style.display = "none";
+
+        for (let i = 1; i <= 6; i++) {
+          const dot = document.getElementById("h-ch-" + i);
+          if (dot) dot.className = "cylinder-chamber-dot";
+        }
+
+        const actBtn = document.getElementById("btn-action");
+        actBtn.innerText = `เริ่มรอบที่ 1 (Start Game) · ${data.playerCount} คนพร้อม`;
+        actBtn.style.background = "var(--primary)";
+        actBtn.style.color = "#000";
+        actBtn.disabled = false;
+      });
+
+      function startAutoNextCountdown(seconds, callback) {
+        let sec = seconds;
+        const hint = document.getElementById("auto-status-hint");
+        const secSpan = document.getElementById("auto-sec-left");
+        hint.style.display = "block";
+        secSpan.innerText = sec;
+
+        clearInterval(hostSession.autoNextTimer);
+        hostSession.autoNextTimer = setInterval(() => {
+          sec--;
+          if (secSpan) secSpan.innerText = sec;
+          if (sec <= 0) {
+            cancelAutoCountdown();
+            callback();
+          }
+        }, 1000);
+      }
+
+      function cancelAutoCountdown() {
+        if (hostSession.autoNextTimer) {
+          clearInterval(hostSession.autoNextTimer);
+          hostSession.autoNextTimer = null;
+        }
+        const hint = document.getElementById("auto-status-hint");
+        if (hint) hint.style.display = "none";
+      }
+
+      let hostRevealTimers = [];
+      let currentHostResult = null;
+
+      function skipHostStaggerReveal() {
+        hostRevealTimers.forEach(clearTimeout);
+        hostRevealTimers = [];
+        if (currentHostResult) {
+          finalizeHostResultInstant(currentHostResult);
+        }
+      }
+
+      function renderHostResult(result) {
+        currentHostResult = result;
+        hostRevealTimers.forEach(clearTimeout);
+        hostRevealTimers = [];
+
+        const barsBox = document.getElementById("host-result-bars");
+        barsBox.style.display = "block";
+
+        const colors = { A: "var(--choice-a)", B: "var(--choice-b)", C: "var(--choice-c)", D: "var(--choice-d)" };
+        const suits = { A: "♠", B: "♥", C: "♦", D: "♣" };
+        const totalVotes = Math.max(1, result.counts.A + result.counts.B + result.counts.C + result.counts.D);
+
+        // แสดง Banner และกล่องรอการเปิดผลลัพธ์
+        let html = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+            <div class="reveal-overlay-banner" id="host-reveal-banner" style="flex: 1; margin: 0;">
+              🥁 กำลังเปิดผลคำตอบของเสียงส่วนใหญ่...
+            </div>
+            <button type="button" class="btn" style="width: auto; padding: 6px 12px; margin: 0; font-size: 0.78rem; background: var(--color-ink);" onclick="skipHostStaggerReveal()">
+              ⏩ แสดงผลทันที
+            </button>
+          </div>
+        `;
+
+        ["A", "B", "C", "D"].forEach(choice => {
+          html += `
+            <div class="chart-row" id="h-row-${choice}">
+              <div class="chart-label">
+                <span><strong>ข้อ ${choice} (${suits[choice]})</strong> <span id="h-crown-${choice}"></span></span>
+                <span id="h-stat-${choice}">กำลังนับ...</span>
+              </div>
+              <div class="chart-bar-bg">
+                <div class="chart-bar-fill" id="h-bar-${choice}" style="width: 0%; background: ${colors[choice]};"></div>
+              </div>
+            </div>
+          `;
+        });
+        barsBox.innerHTML = html;
+
+        // สเต็ปที่ 1: ค่อยๆ เปิดแท่งคะแนน A -> B -> C -> D ทีละแท่ง พร้อมเสียงคอร์ด
+        const choices = ["A", "B", "C", "D"];
+        choices.forEach((choice, idx) => {
+          const t = setTimeout(() => {
+            const count = result.counts[choice];
+            const audCount = result.audienceCounts ? result.audienceCounts[choice] : 0;
+            const pct = Math.round((count / totalVotes) * 100);
+
+            const bar = document.getElementById(`h-bar-${choice}`);
+            const stat = document.getElementById(`h-stat-${choice}`);
+            if (bar) bar.style.width = pct + "%";
+            if (stat) {
+              stat.innerHTML = `${count} คน (${pct}%) ${audCount > 0 ? `<span style="font-size:0.75rem; color:var(--text-muted);">+ผู้ชม ${audCount}</span>` : ''}`;
+            }
+            SFX.staggerStep(idx + 1);
+          }, 650 * (idx + 1));
+          hostRevealTimers.push(t);
+        });
+
+        // สเต็ปที่ 2: รัวกลอง Drumroll และสวมมงกุฎ Majority พร้อมสปอตไลต์ทองอร่าม!
+        const climaxTimer = setTimeout(() => {
+          SFX.drumroll();
+          setTimeout(() => {
+            choices.forEach(choice => {
+              const isWin = result.majority.includes(choice);
+              if (isWin) {
+                const row = document.getElementById(`h-row-${choice}`);
+                const crown = document.getElementById(`h-crown-${choice}`);
+                const bar = document.getElementById(`h-bar-${choice}`);
+                if (row) row.classList.add("majority-spotlight");
+                if (crown) crown.innerText = "👑 Majority";
+                if (bar) bar.classList.add("majority-win");
+              }
+            });
+
+            const banner = document.getElementById("host-reveal-banner");
+            if (banner) {
+              banner.innerHTML = `👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${result.majority.join(", ")}</strong>!`;
+            }
+            SFX.majorityFanfare();
+          }, 450);
+        }, 2900);
+        hostRevealTimers.push(climaxTimer);
+      }
+
+      function finalizeHostResultInstant(result) {
+        const colors = { A: "var(--choice-a)", B: "var(--choice-b)", C: "var(--choice-c)", D: "var(--choice-d)" };
+        const suits = { A: "♠", B: "♥", C: "♦", D: "♣" };
+        const totalVotes = Math.max(1, result.counts.A + result.counts.B + result.counts.C + result.counts.D);
+
+        let html = `
+          <div class="reveal-overlay-banner" style="margin-bottom: 14px;">
+            👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${result.majority.join(", ")}</strong>!
+          </div>
+        `;
+
+        ["A", "B", "C", "D"].forEach(choice => {
+          const count = result.counts[choice];
+          const audCount = result.audienceCounts ? result.audienceCounts[choice] : 0;
+          const pct = Math.round((count / totalVotes) * 100);
+          const isWin = result.majority.includes(choice);
+          const crown = isWin ? "👑 Majority" : "";
+
+          html += `
+            <div class="chart-row ${isWin ? 'majority-spotlight' : ''}">
+              <div class="chart-label">
+                <span><strong>ข้อ ${choice} (${suits[choice]})</strong> ${crown}</span>
+                <span>${count} คน (${pct}%) ${audCount > 0 ? `<span style="font-size:0.75rem; color:var(--text-muted);">+ผู้ชม ${audCount} คน</span>` : ''}</span>
+              </div>
+              <div class="chart-bar-bg">
+                <div class="chart-bar-fill ${isWin ? 'majority-win' : ''}" 
+                     style="width: ${pct}%; background: ${colors[choice]};">
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById("host-result-bars").innerHTML = html;
+        SFX.majorityFanfare();
+      }
+
+      function renderHostGameOver(result, leaderboard) {
+        renderHostResult(result);
+
+        if (leaderboard && leaderboard.length > 0) {
+          const podiumWrap = document.getElementById("host-podium-wrap");
+          const podiumBox = document.getElementById("host-podium-box");
+          podiumWrap.style.display = "block";
+
+          const p1 = leaderboard[0] || { name: "-", score: 0 };
+          const p2 = leaderboard[1] || { name: "-", score: 0 };
+          const p3 = leaderboard[2] || { name: "-", score: 0 };
+
+          podiumBox.innerHTML = `
+            <div class="podium-step podium-2">
+              <div class="podium-name">${escapeHtml(p2.name)}</div>
+              <div class="podium-pill">02<span style="font-size:0.65rem;">${p2.score}</span></div>
+            </div>
+            <div class="podium-step podium-1">
+              <div class="podium-name">${escapeHtml(p1.name)}</div>
+              <div class="podium-pill">01<span style="font-size:0.7rem;">${p1.score}</span></div>
+            </div>
+            <div class="podium-step podium-3">
+              <div class="podium-name">${escapeHtml(p3.name)}</div>
+              <div class="podium-pill">03<span style="font-size:0.65rem;">${p3.score}</span></div>
+            </div>
+          `;
+
+          document.getElementById("host-fun-stats").style.display = "grid";
+          document.getElementById("stat-flash-name").innerText = leaderboard[0].name + " (คะแนนสูงสุด)";
+          document.getElementById("stat-close-round").innerText = `รอบที่ ${result.round}`;
+
+          const lbBox = document.getElementById("host-leaderboard-box");
+          lbBox.style.display = "block";
+          const tbody = document.getElementById("host-lb-body");
+          let rows = "";
+          leaderboard.forEach((p, idx) => {
+            let rankBadge = `${idx + 1}`;
+            let rankClass = "";
+            if (idx === 0) { rankBadge = "01"; rankClass = "rank-1"; }
+            else if (idx === 1) { rankBadge = "02"; rankClass = "rank-2"; }
+            else if (idx === 2) { rankBadge = "03"; rankClass = "rank-3"; }
+
+            rows += `
+              <tr class="${rankClass}">
+                <td style="font-weight: 800;">${rankBadge}</td>
+                <td>${escapeHtml(p.name)}</td>
+                <td style="text-align: right; font-weight: 700;">${Number(p.score).toLocaleString()} แต้ม</td>
+                <td style="text-align: right; color: var(--gold);">${Number(p.audienceScore || 0).toLocaleString()}</td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = rows;
+        }
+      }
+
+      function triggerConfetti() {
+        const canvas = document.getElementById("confetti-canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const pieces = [];
+        const colors = ["#58a6ff", "#f1c40f", "#2ea043", "#e056fd", "#ff9f43"];
+
+        for (let i = 0; i < 100; i++) {
+          pieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            size: Math.random() * 8 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speed: Math.random() * 4 + 2,
+            angle: Math.random() * 360
+          });
+        }
+
+        let frame = 0;
+        function update() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach(p => {
+            p.y += p.speed;
+            p.angle += 3;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+          });
+          frame++;
+          if (frame < 200) requestAnimationFrame(update);
+          else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        update();
+      }
+
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+    </script>
+  </body>
+</html>

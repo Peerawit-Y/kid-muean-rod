@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>คิดเหมือนรอด - สำหรับผู้เล่น</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* สไตล์เพิ่มเติมสำหรับแถบควบคุมเสียง */
+    .volume-control-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--color-ink-2);
+    }
+    .volume-slider {
+      width: 65px;
+      height: 4px;
+      accent-color: var(--color-accent);
+      cursor: pointer;
+    }
+    .btn-leave-room {
+      background: transparent;
+      border: 1px solid var(--color-rule);
+      border-radius: var(--radius-sm);
+      color: var(--color-danger);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-leave-room:hover {
+      background: var(--color-danger-soft);
+    }
+    .status-banner.spectator {
+      background: #21262d;
+      border: 1px dashed var(--gold);
+      color: #f0f6fc;
+    }
+    .tag-spectator {
+      color: var(--gold) !important;
+      font-weight: 600;
+    }
+    .audience-badge {
+      display: inline-block;
+      background: rgba(210, 153, 34, 0.2);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <!-- HUD แจ้งสถานะกู้คืนการเชื่อมต่ออัตโนมัติเมื่อเน็ตสะดุด -->
+  <div class="reconnect-hud" id="reconnect-hud" style="display: none;">
+    <div class="reconnect-spinner"></div>
+    <span id="reconnect-text">กำลังเชื่อมต่อห้องใหม่อัตโนมัติ...</span>
+  </div>
+
+  <div class="container" id="app">
+
+    <!-- Top Persistent Profile Bar -->
+    <div id="player-profile-bar" class="profile-header-bar" style="display: none;">
+      <div class="profile-user-info">
+        <div class="profile-avatar-circle" id="my-avatar-display">01</div>
+        <span id="my-name-display" style="font-weight: 750; color: var(--color-ink); font-size: 1rem;">ผู้เล่น</span>
+      </div>
+      
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- ตัวปรับระดับเสียงบนมือถือ -->
+        <div class="volume-control-box">
+          <span>🔊</span>
+          <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
+        </div>
+
+        <div class="profile-score-badge">
+          คะแนน: <span id="my-live-score">0</span>
+        </div>
+
+        <!-- ปุ่มออกจากห้อง -->
+        <button type="button" id="btn-leave" class="btn-leave-room">
+          ออก
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. Join Screen: เข้าห้องด้วยรหัสและชื่อ -->
+    <div id="join-view">
+      <h1>คิดเหมือนรอด</h1>
+      <p class="subtitle">คุณจะรอด... ถ้าคุณคิดเหมือนคนส่วนใหญ่!</p>
+
+      <div class="form-group">
+        <label>เลือกเครื่องหมายชิปประจำตัว (Casino Chips 01 - 06)</label>
+        <div class="avatar-selector" id="avatar-list">
+          <button type="button" class="avatar-btn selected" data-avatar="01">
+            <span class="avatar-num">01</span>
+            <span class="avatar-suit" style="color: var(--suit-black);">♠</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="02">
+            <span class="avatar-num">02</span>
+            <span class="avatar-suit" style="color: var(--suit-red);">♥</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="03">
+            <span class="avatar-num">03</span>
+            <span class="avatar-suit" style="color: var(--suit-red);">♦</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="04">
+            <span class="avatar-num">04</span>
+            <span class="avatar-suit" style="color: var(--suit-black);">♣</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="05">
+            <span class="avatar-num">05</span>
+            <span class="avatar-suit" style="color: var(--suit-black);">♠</span>
+          </button>
+          <button type="button" class="avatar-btn" data-avatar="06">
+            <span class="avatar-num">06</span>
+            <span class="avatar-suit" style="color: var(--suit-red);">♥</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>ROOM CODE (รหัสห้อง 5 หลัก)</label>
+        <input type="text" id="input-code" placeholder="เช่น V4TWY" maxlength="5">
+      </div>
+
+      <div class="form-group">
+        <label>ชื่อผู้เล่น</label>
+        <input type="text" id="input-name" placeholder="ชื่อหรือรหัสนักศึกษา" maxlength="15" style="letter-spacing: normal; text-transform: none;">
+      </div>
+
+      <button class="btn" id="btn-join">เข้าร่วมห้องเกม →</button>
+      <div id="error-box" class="error-msg"></div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="/host" style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none;">สำหรับอาจารย์ / ผู้ดำเนินรายการ (Host Dashboard) →</a>
+      </div>
+    </div>
+
+    <!-- 2. Lobby Wait Screen -->
+    <div id="lobby-view" style="display: none;">
+      <h1>ห้องรอเริ่มเกม</h1>
+      <div class="room-badge">
+        <div>รหัสห้อง</div>
+        <div class="code" id="display-code">-----</div>
+      </div>
+
+      <div class="badge-count">
+        ผู้เล่นเข้าร่วมแล้ว <span id="player-count">1</span> คน
+      </div>
+
+      <div class="player-list" id="player-tags"></div>
+      <div class="spinner"></div>
+      <p class="subtitle">กรุณารอ Host สั่งเริ่มเกม...</p>
+    </div>
+
+    <!-- 3. Question Screen -->
+    <div id="question-view" style="display: none;">
+      <div class="game-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="display-round">รอบที่ 1</span>
+          <div class="cylinder-hud" id="player-cylinder-hud" title="รังเพลิงลูกโม่ (Revolver Chambers)">
+            <span class="cylinder-chamber-dot active" id="p-ch-1"></span>
+            <span class="cylinder-chamber-dot" id="p-ch-2"></span>
+            <span class="cylinder-chamber-dot" id="p-ch-3"></span>
+            <span class="cylinder-chamber-dot" id="p-ch-4"></span>
+            <span class="cylinder-chamber-dot" id="p-ch-5"></span>
+            <span class="cylinder-chamber-dot" id="p-ch-6"></span>
+          </div>
+        </div>
+        <span id="player-status-tag" style="color: var(--color-success);">● อยู่ในเกม</span>
+      </div>
+
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="timer-bar"></div>
+      </div>
+      <div class="timer-text" id="timer-num">25</div>
+
+      <div class="question-card" id="question-text">
+        กำลังโหลดคำถาม...
+      </div>
+
+      <div class="choices-grid" id="choices-container">
+        <button class="choice-btn a" id="btn-a" data-choice="A">
+          <div class="card-pip top-left"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+          <div class="card-body">
+            <div class="card-watermark">♠</div>
+            <span class="card-text" id="text-a">-</span>
+          </div>
+          <div class="card-pip bottom-right"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+        </button>
+        <button class="choice-btn b" id="btn-b" data-choice="B">
+          <div class="card-pip top-left"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
+          <div class="card-body">
+            <div class="card-watermark">♥</div>
+            <span class="card-text" id="text-b">-</span>
+          </div>
+          <div class="card-pip bottom-right"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
+        </button>
+        <button class="choice-btn c" id="btn-c" data-choice="C">
+          <div class="card-pip top-left"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
+          <div class="card-body">
+            <div class="card-watermark">♦</div>
+            <span class="card-text" id="text-c">-</span>
+          </div>
+          <div class="card-pip bottom-right"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
+        </button>
+        <button class="choice-btn d" id="btn-d" data-choice="D">
+          <div class="card-pip top-left"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+          <div class="card-body">
+            <div class="card-watermark">♣</div>
+            <span class="card-text" id="text-d">-</span>
+          </div>
+          <div class="card-pip bottom-right"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+        </button>
+      </div>
+
+      <p class="subtitle" id="lock-notice" style="margin-top: 18px; margin-bottom: 0;">
+        แตะตัวเลือกที่คิดว่าคนส่วนใหญ่จะตอบ
+      </p>
+    </div>
+
+    <!-- 4. Result Screen -->
+    <div id="result-view" style="display: none;">
+      <h1 id="result-title">ผลคะแนนรอบที่ 1</h1>
+
+      <div id="player-status-banner" class="status-banner survived">
+        <h2 id="status-title" style="font-size: 1.4rem; margin-bottom: 4px;">ผ่านเข้าสู่รอบถัดไป</h2>
+        <div id="status-desc" style="font-size: 0.95rem; font-weight: normal;">คุณตอบเหมือนเสียงส่วนใหญ่</div>
+      </div>
+
+      <div id="score-breakdown-card" style="background: var(--color-paper); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none;">
+        <div id="stat-base-row" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem;">
+          <span style="color: var(--text-muted);">คะแนนรอดชีวิตรอบนี้:</span>
+          <strong id="stat-base-score" style="color: var(--color-success);">+1,000</strong>
+        </div>
+        <div id="stat-speed-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+          <span style="color: var(--text-muted);">โบนัสความเร็ว (ตอบเหลือ <span id="stat-time-left">0</span>s):</span>
+          <strong id="stat-speed-score" style="color: var(--gold);">+0</strong>
+        </div>
+        <div id="stat-audience-row" style="display: none; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+          <span style="color: var(--gold);">แต้มหยั่งรู้ (ทายใจเสียงส่วนใหญ่):</span>
+          <strong id="stat-audience-score" style="color: var(--gold);">+500</strong>
+        </div>
+        <hr style="border: 0; border-top: 1px solid var(--card-border); margin: 6px 0 8px 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 700;">
+          <span>คะแนนสะสมรวม:</span>
+          <span id="stat-total-score" style="color: var(--primary);">0 แต้ม</span>
+        </div>
+      </div>
+
+      <div id="result-bars-box" style="margin-bottom: 24px;"></div>
+      <div class="spinner"></div>
+      <p class="subtitle">รอ Host ดำเนินการรอบถัดไป...</p>
+    </div>
+
+    <!-- 5. Game Over Screen -->
+    <div id="gameover-view" style="display: none;">
+      <h1>สิ้นสุดการแข่งขัน</h1>
+      <p class="subtitle">คิดเหมือนรอด — บทสรุปเสียงส่วนใหญ่</p>
+
+      <div class="winner-box">
+        <div class="winner-title">👑 ผู้ชนะเลิศ · Winner</div>
+        <div class="winner-name" id="winner-display-name">---</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">ทำคะแนนรวมสูงสุดในเกมนี้!</div>
+      </div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">ตารางคะแนนทางการ</h3>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th style="width: 15%;">อันดับ</th>
+            <th>ชื่อผู้เล่น</th>
+            <th style="width: 30%; text-align: right;">คะแนนรวม</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+
+      <p class="subtitle" style="margin-top: 20px;">ขอบคุณทุกคนที่ร่วมสนุก!</p>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================
+       1. ระบบเสียง Russian Roulette & Card SFX บนมือถือ
+       ========================================= */
+    let pAudioCtx = null;
+    let masterGain = null;
+    let currentVolume = 0.8;
+
+    function initAudioContext() {
+      if (!pAudioCtx) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) {
+          pAudioCtx = new AudioClass();
+          masterGain = pAudioCtx.createGain();
+          masterGain.gain.setValueAtTime(currentVolume, pAudioCtx.currentTime);
+          masterGain.connect(pAudioCtx.destination);
+        }
+      }
+      if (pAudioCtx && pAudioCtx.state === 'suspended') {
+        pAudioCtx.resume();
+      }
+    }
+
+    window.addEventListener('touchstart', function unlockTouch() {
+      initAudioContext();
+      requestWakeLock();
+    }, { passive: true });
+
+    window.addEventListener('click', function unlockClick() {
+      initAudioContext();
+      requestWakeLock();
+    }, { once: true });
+
+    // เสียงคลิก / วางเดิมพันไพ่ (Card Snap)
+    function playClickSound() {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+
+        const osc = pAudioCtx.createOscillator();
+        const gain = pAudioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1200, pAudioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(320, pAudioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.25, pAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, pAudioCtx.currentTime + 0.04);
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        osc.stop(pAudioCtx.currentTime + 0.04);
+      } catch(e) {}
+    }
+
+    // เสียงหมุนรังเพลิงลูกโม่ (Revolver Cylinder Ratchet Spin)
+    function playCylinderSpinSound() {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+        const now = pAudioCtx.currentTime;
+        const clicks = 6;
+        for (let i = 0; i < clicks; i++) {
+          const t = now + (i * 0.055);
+          const osc = pAudioCtx.createOscillator();
+          const gain = pAudioCtx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(1400 - (i * 80), t);
+          osc.frequency.exponentialRampToValueAtTime(400, t + 0.02);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start(t);
+          osc.stop(t + 0.02);
+        }
+      } catch(e) {}
+    }
+
+    // เสียงสับไกแห้ง / รอดชีวิต (Blank Chamber Click)
+    function playBlankClickSound() {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+        const now = pAudioCtx.currentTime;
+        const osc = pAudioCtx.createOscillator();
+        const gain = pAudioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1800, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } catch(e) {}
+    }
+
+    // เสียงปืนลั่นสนั่นก้อง / ตกรอบ (Gunshot Explosion & Echo)
+    function playGunshotSound() {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+        const now = pAudioCtx.currentTime;
+
+        // Sub Bass Punch
+        const bass = pAudioCtx.createOscillator();
+        const bassGain = pAudioCtx.createGain();
+        bass.type = "sawtooth";
+        bass.frequency.setValueAtTime(220, now);
+        bass.frequency.exponentialRampToValueAtTime(30, now + 0.4);
+        bassGain.gain.setValueAtTime(0.5, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        bass.connect(bassGain);
+        bassGain.connect(masterGain);
+        bass.start(now);
+        bass.stop(now + 0.45);
+
+        // Gunpowder crackle
+        const osc = pAudioCtx.createOscillator();
+        const gain = pAudioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(20, now + 0.2);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } catch(e) {}
+    }
+
+    // เสียงชิปคาสิโนกระทบกัน (Casino Chips Clink)
+    function playChipSound() {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+        const now = pAudioCtx.currentTime;
+        [2400, 3200].forEach((freq, idx) => {
+          const osc = pAudioCtx.createOscillator();
+          const gain = pAudioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + (idx * 0.04));
+          gain.gain.setValueAtTime(0.18, now + (idx * 0.04));
+          gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.04) + 0.06);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start(now + (idx * 0.04));
+          osc.stop(now + (idx * 0.04) + 0.06);
+        });
+      } catch(e) {}
+    }
+
+    // เสียงเปิดผลตัวเลือกแบบไต่ระดับ (Staggered Choice Reveal Pitch)
+    function playStaggerStep(step) {
+      try {
+        initAudioContext();
+        if (!pAudioCtx || !masterGain || currentVolume <= 0) return;
+        const freqs = [349.23, 440.00, 523.25, 659.25];
+        const osc = pAudioCtx.createOscillator();
+        const gain = pAudioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freqs[(step - 1) % freqs.length], pAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.22, pAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, pAudioCtx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        osc.stop(pAudioCtx.currentTime + 0.3);
+      } catch(e) {}
+    }
+
+    function vibrateDevice(ms) {
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate(ms); } catch (e) {}
+      }
+    }
+
+    // Screen Wake Lock API ป้องกันจอดับระหว่างเล่นเกม
+    let wakeLock = null;
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    /* =========================================
+       2. Real-Time Socket.io Connection & State
+       ========================================= */
+    const socket = io();
+
+    let selectedAvatarIcon = "A♠ 🦉";
+    let session = {
+      roomId: null,
+      roomCode: null,
+      playerId: null,
+      playerToken: null,
+      playerName: null,
+      avatar: "A♠ 🦉",
+      currentRound: 0,
+      maxRounds: 5,
+      score: 0,
+      audienceScore: 0,
+      hasAnswered: false,
+      selectedChoice: null,
+      isAlive: true,
+      remainingSec: 25,
+      roundDuration: 25
+    };
+
+    function showReconnectHud(text) {
+      const hud = document.getElementById("reconnect-hud");
+      if (hud) {
+        document.getElementById("reconnect-text").innerText = text || "กำลังเชื่อมต่อใหม่...";
+        hud.style.display = "flex";
+      }
+    }
+
+    function hideReconnectHud() {
+      const hud = document.getElementById("reconnect-hud");
+      if (hud) hud.style.display = "none";
+    }
+
+    function handleLeaveRoom() {
+      if (!confirm("ต้องการออกจากห้องเกมนี้ใช่หรือไม่?")) return;
+      playClickSound();
+
+      try {
+        sessionStorage.removeItem("pim_player_session");
+      } catch(e) {}
+
+      session = {
+        roomId: null,
+        roomCode: null,
+        playerId: null,
+        playerToken: null,
+        playerName: null,
+        avatar: "01",
+        currentRound: 0,
+        maxRounds: 5,
+        score: 0,
+        audienceScore: 0,
+        hasAnswered: false,
+        selectedChoice: null,
+        isAlive: true,
+        remainingSec: 25,
+        roundDuration: 25
+      };
+
+      document.getElementById("lobby-view").style.display = "none";
+      document.getElementById("question-view").style.display = "none";
+      document.getElementById("result-view").style.display = "none";
+      document.getElementById("gameover-view").style.display = "none";
+      document.getElementById("player-profile-bar").style.display = "none";
+      
+      document.getElementById("input-code").value = "";
+      document.getElementById("input-name").value = "";
+      document.getElementById("error-box").innerText = "";
+      document.getElementById("join-view").style.display = "block";
+    }
+
+    /* =========================================
+       3. การควบคุม UI และ Event Listeners
+       ========================================= */
+    window.addEventListener("DOMContentLoaded", function() {
+      // ตัวปรับเสียง
+      const volSlider = document.getElementById("volume-slider");
+      if (volSlider) {
+        volSlider.addEventListener("input", function(e) {
+          currentVolume = parseFloat(e.target.value);
+          if (masterGain && pAudioCtx) {
+            masterGain.gain.setValueAtTime(currentVolume, pAudioCtx.currentTime);
+          }
+        });
+      }
+
+      // ปุ่มออกจากห้อง
+      const leaveBtn = document.getElementById("btn-leave");
+      if (leaveBtn) leaveBtn.addEventListener("click", handleLeaveRoom);
+
+      // ปุ่มเข้าร่วมห้องเกม
+      const joinBtn = document.getElementById("btn-join");
+      if (joinBtn) joinBtn.addEventListener("click", handleJoinRoom);
+
+      // ปุ่มเลือกคำตอบ A, B, C, D
+      document.querySelectorAll(".choice-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          handleAnswer(this.getAttribute("data-choice"));
+        });
+      });
+
+      // ปุ่มเลือก Avatar ชิปคาสิโน 01-06
+      document.querySelectorAll(".avatar-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          selectAvatar(this.getAttribute("data-avatar"));
+        });
+      });
+
+      // ตรวจสอบ Parameter ห้องจาก URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get("room");
+      if (roomParam) {
+        document.getElementById("input-code").value = roomParam.toUpperCase();
+      }
+
+      // ตรวจสอบการกู้คืนห้องเดิมอัตโนมัติ (Session Resume เมื่อรีเฟรชหน้าจอ)
+      checkAutoResume();
+    });
+
+    function checkAutoResume() {
+      try {
+        const saved = sessionStorage.getItem("pim_player_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.roomId && parsed.playerId && parsed.playerToken) {
+            showReconnectHud("กำลังกู้คืนห้องเดิมของคุณ...");
+            socket.emit("player:resume-session", {
+              roomId: parsed.roomId,
+              playerId: parsed.playerId,
+              playerToken: parsed.playerToken
+            }, function(res) {
+              hideReconnectHud();
+              if (res && res.success) {
+                restorePlayerState(res);
+              } else {
+                sessionStorage.removeItem("pim_player_session");
+              }
+            });
+          }
+        }
+      } catch(e) {}
+    }
+
+    let selectedAvatar = "01";
+    function selectAvatar(icon) {
+      playClickSound();
+      selectedAvatar = icon;
+      session.avatar = icon;
+      document.querySelectorAll(".avatar-btn").forEach(function(b) {
+        b.classList.remove("selected");
+        if (b.getAttribute("data-avatar") === icon) b.classList.add("selected");
+      });
+      vibrateDevice(20);
+    }
+
+    function restorePlayerState(res) {
+      session.roomId = res.roomId;
+      session.roomCode = res.roomCode;
+      session.playerId = res.playerId;
+      session.playerName = res.playerName;
+      session.avatar = res.avatar || session.avatar || "01";
+      session.isAlive = res.isAlive;
+      session.score = res.score;
+      session.audienceScore = res.audienceScore;
+      session.currentRound = res.currentRound;
+      session.maxRounds = res.maxRounds;
+
+      const avDisplay = document.getElementById("my-avatar-display");
+      if (avDisplay) avDisplay.innerText = session.avatar;
+
+      document.getElementById("my-name-display").innerText = session.playerName;
+      document.getElementById("my-live-score").innerText = Number(session.score).toLocaleString();
+      document.getElementById("player-profile-bar").style.display = "flex";
+      document.getElementById("join-view").style.display = "none";
+
+      if (res.roomStatus === "LOBBY") {
+        document.getElementById("lobby-view").style.display = "block";
+        document.getElementById("display-code").innerText = res.roomCode;
+        document.getElementById("player-count").innerText = res.playerCount;
+        renderPlayerTags(res.players);
+      } else if (res.roomStatus === "ANSWERING") {
+        showQuestionScreen({
+          round: res.currentRound,
+          maxRounds: res.maxRounds,
+          question: res.question,
+          duration: res.roundDuration,
+          remainingSeconds: res.remainingSeconds
+        });
+        if (res.hasAnswered && res.selectedChoice) {
+          session.hasAnswered = true;
+          session.selectedChoice = res.selectedChoice;
+          highlightSelectedChoice(res.selectedChoice);
+          document.getElementById("lock-notice").innerText = `คุณเลือกข้อ ${res.selectedChoice} แล้ว (กู้คืนสำเร็จ)`;
+        }
+      } else if (res.roomStatus === "RESULT" && res.lastResult) {
+        showResultScreen(res.lastResult, null);
+      }
+    }
+
+    // เข้าร่วมห้องเกมโดยตรง
+    function handleJoinRoom() {
+      playClickSound();
+      requestWakeLock();
+      const code = document.getElementById("input-code").value.trim().toUpperCase();
+      const name = document.getElementById("input-name").value.trim();
+      const errBox = document.getElementById("error-box");
+      const joinBtn = document.getElementById("btn-join");
+
+      if (!code || !name) {
+        errBox.innerText = "กรุณากรอกทั้งรหัสห้องและชื่อของคุณ";
+        return;
+      }
+
+      vibrateDevice(35);
+      errBox.innerText = "";
+      joinBtn.disabled = true;
+      joinBtn.innerText = "กำลังเข้าร่วมห้อง...";
+
+      let timeoutTriggered = false;
+      const safetyTimer = setTimeout(function() {
+        timeoutTriggered = true;
+        joinBtn.disabled = false;
+        joinBtn.innerText = "เข้าร่วมห้องเกม →";
+        errBox.innerText = "การเชื่อมต่อล่าช้า กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดอยู่ หรือลองใหม่อีกครั้ง";
+      }, 5000);
+
+      socket.emit("player:join", {
+        roomCode: code,
+        playerName: name,
+        avatar: selectedAvatar
+      }, function(res) {
+        if (timeoutTriggered) return;
+        clearTimeout(safetyTimer);
+        joinBtn.disabled = false;
+        joinBtn.innerText = "เข้าร่วมห้องเกม →";
+
+        if (res && res.success) {
+          session.roomId = res.roomId;
+          session.roomCode = res.roomCode;
+          session.playerId = res.playerId;
+          session.playerToken = res.playerToken;
+          session.playerName = res.playerName;
+          session.avatar = selectedAvatar;
+          session.isAlive = true;
+          session.score = 0;
+          session.audienceScore = 0;
+
+          const avDisplay = document.getElementById("my-avatar-display");
+          if (avDisplay) avDisplay.innerText = session.avatar;
+
+          try {
+            sessionStorage.setItem("pim_player_session", JSON.stringify({
+              roomId: res.roomId,
+              roomCode: res.roomCode,
+              playerId: res.playerId,
+              playerToken: res.playerToken,
+              playerName: res.playerName
+            }));
+          } catch(e) {}
+
+          document.getElementById("my-name-display").innerText = session.playerName;
+          document.getElementById("my-live-score").innerText = "0";
+          document.getElementById("player-profile-bar").style.display = "flex";
+
+          document.getElementById("join-view").style.display = "none";
+          document.getElementById("lobby-view").style.display = "block";
+          document.getElementById("display-code").innerText = res.roomCode;
+          document.getElementById("player-count").innerText = res.playerCount;
+
+          renderPlayerTags(res.players);
+        } else {
+          vibrateDevice(90);
+          errBox.innerText = (res && res.message) ? res.message : "ไม่สามารถเข้าร่วมห้องได้";
+        }
+      });
+    }
+
+    function renderPlayerTags(players) {
+      const tagsBox = document.getElementById("player-tags");
+      if (tagsBox && Array.isArray(players)) {
+        tagsBox.innerHTML = players.map(function(p) {
+          return '<span class="player-tag">' + escapeHtml(p.name) + '</span>';
+        }).join("");
+      }
+    }
+
+    /* =========================================
+       4. Real-Time Socket Event Handlers
+       ========================================= */
+
+    socket.on("connect", function() {
+      hideReconnectHud();
+    });
+
+    socket.on("disconnect", function() {
+      if (session.roomId) {
+        showReconnectHud("หลุดการเชื่อมต่อชั่วคราว กำลังต่อใหม่...");
+      }
+    });
+
+    // สมาชิกในห้องเปลี่ยน (คนเข้าใหม่ / ถูกเตะออก)
+    socket.on("room:players-updated", function(data) {
+      if (data.playerCount !== undefined) {
+        document.getElementById("player-count").innerText = data.playerCount;
+      }
+      renderPlayerTags(data.players);
+    });
+
+    // เริ่มรอบคำถามใหม่ (Real-Time Broadcast)
+    socket.on("game:round-started", function(data) {
+      session.currentRound = data.round;
+      session.maxRounds = data.maxRounds;
+      session.hasAnswered = false;
+      session.selectedChoice = null;
+      session.roundDuration = data.duration || 25;
+      session.remainingSec = data.duration || 25;
+
+      showQuestionScreen(data);
+    });
+
+    // นับถอยหลังแบบ Synchronized
+    socket.on("game:timer-tick", function(data) {
+      session.remainingSec = data.remainingSeconds;
+      updateTimerUI();
+
+      if (session.remainingSec <= 0) {
+        lockAllChoices();
+        document.getElementById("lock-notice").innerText = "หมดเวลาตอบแล้ว! กำลังประมวลผล...";
+      }
+    });
+
+    // อัปเดตจำนวนคนที่ส่งคำตอบแล้ว
+    socket.on("game:answer-count-update", function(data) {
+      if (session.hasAnswered) {
+        document.getElementById("lock-notice").innerText = 
+          "ตอบแล้ว! รวดเร็วมาก (ตอบแล้ว " + data.answeredCount + " / " + data.totalAlive + " คน)";
+      }
+    });
+
+    // สรุปผลคะแนนรอบนั้น
+    socket.on("game:round-result", function(data) {
+      const result = data.result;
+      const myBreakdown = (data.breakdowns && session.playerId) ? data.breakdowns[session.playerId] : null;
+
+      if (myBreakdown) {
+        session.isAlive = myBreakdown.isAlive;
+        session.score = myBreakdown.totalScore;
+        session.audienceScore = myBreakdown.audienceScore;
+      }
+
+      if (result.isGameOver) {
+        showGameOverScreen(result, result.leaderboard, myBreakdown);
+      } else {
+        showResultScreen(result, myBreakdown);
+      }
+    });
+
+    // รีเซ็ตเกมใหม่ (Restart)
+    socket.on("game:restarted", function(data) {
+      session.isAlive = true;
+      session.score = 0;
+      session.audienceScore = 0;
+      session.currentRound = 0;
+      session.hasAnswered = false;
+      session.selectedChoice = null;
+
+      document.getElementById("my-live-score").innerText = "0";
+      document.getElementById("question-view").style.display = "none";
+      document.getElementById("result-view").style.display = "none";
+      document.getElementById("gameover-view").style.display = "none";
+      document.getElementById("lobby-view").style.display = "block";
+
+      if (data.playerCount !== undefined) {
+        document.getElementById("player-count").innerText = data.playerCount;
+      }
+      renderPlayerTags(data.players);
+    });
+
+    // ถูกเตะออกจากห้อง
+    socket.on("player:kicked", function(data) {
+      if (data.playerId === session.playerId) {
+        alert("คุณถูก Host นำออกจากห้องเกม");
+        handleLeaveRoom();
+      }
+    });
+
+    /* =========================================
+       5. Screen Transitions & UI Logic
+       ========================================= */
+    function updateCylinderHUD(round, maxRounds) {
+      const activeIdx = ((round - 1) % 6) + 1;
+      for (let i = 1; i <= 6; i++) {
+        const dot = document.getElementById("p-ch-" + i);
+        if (!dot) continue;
+        dot.className = "cylinder-chamber-dot";
+        if (i < activeIdx) {
+          dot.classList.add("spent");
+        } else if (i === activeIdx) {
+          dot.classList.add("active");
+        }
+      }
+    }
+
+    function showQuestionScreen(state) {
+      document.getElementById("lobby-view").style.display = "none";
+      document.getElementById("result-view").style.display = "none";
+      document.getElementById("gameover-view").style.display = "none";
+      document.getElementById("question-view").style.display = "block";
+
+      const total = state.maxRounds || session.maxRounds || 5;
+      document.getElementById("display-round").innerText = "รอบที่ " + state.round + " / " + total;
+      updateCylinderHUD(state.round, total);
+      playCylinderSpinSound();
+      
+      const tag = document.getElementById("player-status-tag");
+      if (session.isAlive) {
+        tag.innerText = "● อยู่ในเกม";
+        tag.className = "";
+        tag.style.color = "var(--color-success)";
+      } else {
+        tag.innerText = "👻 โหมดหยั่งรู้ (ทายใจเสียงส่วนใหญ่)";
+        tag.className = "tag-spectator";
+      }
+
+      document.getElementById("question-text").innerText = state.question.question;
+      document.getElementById("text-a").innerText = state.question.optionA;
+      document.getElementById("text-b").innerText = state.question.optionB;
+      document.getElementById("text-c").innerText = state.question.optionC;
+      document.getElementById("text-d").innerText = state.question.optionD;
+
+      ["a", "b", "c", "d"].forEach(function(id) {
+        const btn = document.getElementById("btn-" + id);
+        btn.classList.remove("selected", "disabled");
+        btn.disabled = false; // ทั้งคนรอดและผู้ชมสามารถเลือกได้!
+      });
+
+      if (session.isAlive) {
+        document.getElementById("lock-notice").innerText = "แตะตัวเลือกที่คิดว่าคนส่วนใหญ่จะตอบ";
+      } else {
+        document.getElementById("lock-notice").innerText = "โหมดผู้ชม: ทายว่าเสียงส่วนใหญ่จะเลือกข้อไหน เพื่อเก็บแต้มหยั่งรู้ (+500)";
+      }
+
+      updateTimerUI();
+    }
+
+    function updateTimerUI() {
+      const timerNum = document.getElementById("timer-num");
+      const timerBar = document.getElementById("timer-bar");
+      if (!timerNum || !timerBar) return;
+
+      const dur = session.roundDuration || 25;
+      timerNum.innerText = session.remainingSec;
+      const pct = Math.max(0, (session.remainingSec / dur) * 100);
+      timerBar.style.width = pct + "%";
+
+      if (session.remainingSec <= 5) {
+        timerNum.style.color = "var(--color-danger)";
+        timerBar.style.backgroundColor = "var(--color-danger)";
+        if (session.remainingSec > 0) vibrateDevice(80);
+      } else {
+        timerNum.style.color = "var(--primary)";
+        timerBar.style.backgroundColor = "var(--primary)";
+      }
+    }
+
+    function handleAnswer(choice) {
+      if (session.hasAnswered || session.remainingSec <= 0) return;
+
+      playClickSound();
+      vibrateDevice(50);
+      session.hasAnswered = true;
+      session.selectedChoice = choice;
+
+      highlightSelectedChoice(choice);
+      if (session.isAlive) {
+        document.getElementById("lock-notice").innerText = "คุณเลือก " + choice + " แล้ว (ล็อกคำตอบเรียบร้อย)";
+      } else {
+        document.getElementById("lock-notice").innerText = "คุณทายว่า Majority คือ " + choice + " (ล็อกคำตอบเรียบร้อย)";
+      }
+
+      socket.emit("player:submit-answer", {
+        roomId: session.roomId,
+        playerId: session.playerId,
+        choice: choice
+      }, function(res) {
+        if (!res.success) {
+          alert(res.message);
+        }
+      });
+    }
+
+    function highlightSelectedChoice(choice) {
+      ["A", "B", "C", "D"].forEach(function(letter) {
+        const btn = document.getElementById("btn-" + letter.toLowerCase());
+        if (letter === choice) {
+          btn.classList.add("selected");
+        } else {
+          btn.classList.add("disabled");
+        }
+        btn.disabled = true;
+      });
+    }
+
+    function lockAllChoices() {
+      ["a", "b", "c", "d"].forEach(function(id) {
+        const btn = document.getElementById("btn-" + id);
+        btn.disabled = true;
+        if (!session.selectedChoice || session.selectedChoice.toUpperCase() !== id.toUpperCase()) {
+          btn.classList.add("disabled");
+        }
+      });
+    }
+
+    function showResultScreen(result, myStats) {
+      document.getElementById("question-view").style.display = "none";
+      document.getElementById("result-view").style.display = "block";
+      document.getElementById("result-title").innerText = "ผลคะแนนรอบที่ " + result.round;
+
+      const banner = document.getElementById("player-status-banner");
+      const statusTitle = document.getElementById("status-title");
+      const statusDesc = document.getElementById("status-desc");
+      const scoreCard = document.getElementById("score-breakdown-card");
+      const baseRow = document.getElementById("stat-base-row");
+      const speedRow = document.getElementById("stat-speed-row");
+      const audienceRow = document.getElementById("stat-audience-row");
+
+      if (myStats && myStats.survived) {
+        // รอดชีวิต
+        playBlankClickSound();
+        setTimeout(playChipSound, 150);
+        banner.className = "status-banner survived";
+        statusTitle.innerText = "⚪ CLICK! รังเพลิงว่าง — คุณรอดชีวิต!";
+        statusDesc.innerText = "คุณเลือกไพ่ข้อ " + session.selectedChoice + " ตรงกับเสียงส่วนใหญ่ (" + result.counts[session.selectedChoice] + " คน)";
+        
+        scoreCard.style.display = "block";
+        baseRow.style.display = "flex";
+        speedRow.style.display = "flex";
+        audienceRow.style.display = "none";
+
+        document.getElementById("stat-base-score").innerText = "+" + Number(myStats.baseScore).toLocaleString() + " แต้ม";
+        document.getElementById("stat-time-left").innerText = myStats.timeLeft;
+        document.getElementById("stat-speed-score").innerText = "+" + Number(myStats.speedScore).toLocaleString() + " แต้ม";
+        document.getElementById("stat-total-score").innerText = Number(myStats.totalScore).toLocaleString() + " แต้ม";
+        document.getElementById("my-live-score").innerText = Number(myStats.totalScore).toLocaleString();
+      } else if (!myStats || !myStats.isAlive) {
+        // ตกรอบแล้ว แต่อาจเป็นผู้ชมที่ทายถูก
+        if (myStats && myStats.audienceCorrect) {
+          playChipSound();
+          banner.className = "status-banner spectator";
+          statusTitle.innerText = "🎯 ทายใจเสียงส่วนใหญ่สำเร็จ!";
+          statusDesc.innerText = "คุณเลือก " + session.selectedChoice + " ตรงกับ Majority! ได้รับแต้มหยั่งรู้";
+          
+          scoreCard.style.display = "block";
+          baseRow.style.display = "none";
+          speedRow.style.display = "none";
+          audienceRow.style.display = "flex";
+          document.getElementById("stat-audience-score").innerText = "+500 แต้ม";
+          document.getElementById("stat-total-score").innerText = Number(myStats.totalScore || 0).toLocaleString() + " แต้ม";
+        } else {
+          playGunshotSound();
+          vibrateDevice(200);
+          banner.className = "status-banner eliminated";
+          statusTitle.innerText = session.selectedChoice ? "💥 BANG! โดนกระสุนจริง — ตกรอบสู่โหมดผู้ชม!" : "💥 BANG! ไม่ได้ลงไพ่ทันเวลา — ตกรอบสู่โหมดผู้ชม!";
+          statusDesc.innerText = "เสียงส่วนใหญ่ (Majority) รอบนี้คือไพ่: " + result.majority.join(", ");
+          
+          scoreCard.style.display = "block";
+          baseRow.style.display = "none";
+          speedRow.style.display = "none";
+          audienceRow.style.display = "none";
+          document.getElementById("stat-total-score").innerText = Number((myStats ? myStats.totalScore : session.score) || 0).toLocaleString() + " แต้ม";
+        }
+      }
+
+      renderResultBars(result);
+    }
+
+    function showGameOverScreen(result, leaderboard, myStats) {
+      document.getElementById("question-view").style.display = "none";
+      document.getElementById("result-view").style.display = "none";
+      document.getElementById("gameover-view").style.display = "block";
+
+      const winnerNames = result.winners && result.winners.length > 0 
+        ? result.winners.map(function(w) { return escapeHtml(w.name); }).join(", ")
+        : "ไม่มีผู้รอดชีวิต";
+
+      document.getElementById("winner-display-name").innerText = winnerNames;
+
+      if (leaderboard) {
+        const myRecord = leaderboard.find(function(p) { return p.id === session.playerId; });
+        if (myRecord) {
+          document.getElementById("my-live-score").innerText = Number(myRecord.score).toLocaleString();
+        } else if (myStats && myStats.totalScore !== undefined) {
+          document.getElementById("my-live-score").innerText = Number(myStats.totalScore).toLocaleString();
+        }
+
+        const tbody = document.getElementById("leaderboard-body");
+        let rows = "";
+        leaderboard.forEach(function(p, idx) {
+          let rankBadge = "" + (idx + 1);
+          let rankClass = "";
+          if (idx === 0) { rankBadge = "🥇 01"; rankClass = "rank-1"; }
+          else if (idx === 1) { rankBadge = "🥈 02"; rankClass = "rank-2"; }
+          else if (idx === 2) { rankBadge = "🥉 03"; rankClass = "rank-3"; }
+
+          const isMe = (p.id === session.playerId);
+          const meTag = isMe ? ' <span style="color: var(--primary); font-weight: bold;">(ฉัน)</span>' : '';
+
+          rows += '<tr class="' + rankClass + '" style="' + (isMe ? 'background: rgba(31, 111, 235, 0.1);' : '') + '">' +
+                    '<td>' + rankBadge + '</td>' +
+                    '<td>' + escapeHtml(p.name) + meTag + '</td>' +
+                    '<td style="text-align: right;">' + Number(p.score).toLocaleString() + ' แต้ม</td>' +
+                  '</tr>';
+        });
+        tbody.innerHTML = rows;
+      }
+    }
+
+    let playerRevealTimers = [];
+
+    function renderResultBars(result) {
+      playerRevealTimers.forEach(clearTimeout);
+      playerRevealTimers = [];
+
+      const barsBox = document.getElementById("result-bars-box");
+      const colors = { A: "var(--choice-a)", B: "var(--choice-b)", C: "var(--choice-c)", D: "var(--choice-d)" };
+      const suits = { A: "♠", B: "♥", C: "♦", D: "♣" };
+      const totalVotes = Math.max(1, result.counts.A + result.counts.B + result.counts.C + result.counts.D);
+
+      let html = '<div class="reveal-overlay-banner" id="p-reveal-banner" style="font-size: 0.95rem; padding: 8px 12px; margin-bottom: 12px;">🥁 กำลังเปิดผลคำตอบเสียงส่วนใหญ่...</div>';
+      ["A", "B", "C", "D"].forEach(function(choice) {
+        html += '<div class="chart-row" id="p-row-' + choice + '">' +
+                  '<div class="chart-label">' +
+                    '<span><strong>ข้อ ' + choice + ' (' + suits[choice] + ')</strong> <span id="p-crown-' + choice + '"></span></span>' +
+                    '<span id="p-stat-' + choice + '">กำลังนับ...</span>' +
+                  '</div>' +
+                  '<div class="chart-bar-bg">' +
+                    '<div class="chart-bar-fill" id="p-bar-' + choice + '" style="width: 0%; background: ' + colors[choice] + ';"></div>' +
+                  '</div>' +
+                '</div>';
+      });
+      barsBox.innerHTML = html;
+
+      // สเต็ปเปิดทีละข้อ A -> B -> C -> D
+      ["A", "B", "C", "D"].forEach(function(choice, idx) {
+        const t = setTimeout(function() {
+          const count = result.counts[choice];
+          const pct = Math.round((count / totalVotes) * 100);
+          const bar = document.getElementById("p-bar-" + choice);
+          const stat = document.getElementById("p-stat-" + choice);
+          if (bar) bar.style.width = pct + "%";
+          if (stat) stat.innerText = count + " คน (" + pct + "%)";
+          playStaggerStep(idx + 1);
+        }, 550 * (idx + 1));
+        playerRevealTimers.push(t);
+      });
+
+      // สเต็ปฉลอง Majority
+      const climaxTimer = setTimeout(function() {
+        ["A", "B", "C", "D"].forEach(function(choice) {
+          const isWin = result.majority.includes(choice);
+          if (isWin) {
+            const row = document.getElementById("p-row-" + choice);
+            const crown = document.getElementById("p-crown-" + choice);
+            const bar = document.getElementById("p-bar-" + choice);
+            if (row) row.classList.add("majority-spotlight");
+            if (crown) crown.innerText = "👑 Majority";
+            if (bar) bar.classList.add("majority-win");
+          }
+        });
+
+        const banner = document.getElementById("p-reveal-banner");
+        if (banner) {
+          banner.innerHTML = "👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>" + result.majority.join(", ") + "</strong>";
+        }
+      }, 2600);
+      playerRevealTimers.push(climaxTimer);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
