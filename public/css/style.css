@@ -250,21 +250,25 @@ p.subtitle {
   color: #fff;
 }
 
-/* Profile Chip Badge */
+/* Profile Chip Badge (Las Vegas Clay Chip) */
 .profile-avatar-circle {
-  width: 2.35rem;
-  height: 2.35rem;
-  display: grid;
-  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
-  color: #111827;
-  background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fef3c7 70%, #d97706 100%);
-  border: 2px dashed #92400e;
   border-radius: 50%;
-  font-family: var(--font-card);
-  font-size: .95rem;
-  font-weight: 900;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  background: transparent;
+  border: none;
+  overflow: hidden;
+}
+
+.profile-avatar-circle svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .profile-score-badge {
@@ -319,69 +323,202 @@ input[type="text"]:focus, select:focus {
   box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
 }
 
-/* 6 Casino Poker Chips (01 ♠ to 06 ♥) */
+/* ===================================================
+   🎰 Las Vegas Poker Club Clay Chips (สัญลักษณ์หน้าไพ่ ♠ ♥ ♦ ♣)
+   =================================================== */
+.vegas-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: var(--space-md);
+}
+
+.vegas-chip-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
+  outline: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vegas-chip-wrapper {
+  width: min(72px, 20vw);
+  height: min(72px, 20vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.vegas-chip-wrapper svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+.vegas-chip-btn:hover .vegas-chip-wrapper {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.65);
+}
+
+/* Selected Las Vegas Chip: Glowing Golden Aura Ring */
+.vegas-chip-btn.selected .vegas-chip-wrapper {
+  transform: translateY(-5px) scale(1.12);
+  box-shadow: 
+    0 0 0 3px #facc15,
+    0 0 18px rgba(250, 204, 21, 0.95), 
+    0 0 35px rgba(234, 179, 8, 0.65) !important;
+  animation: vegasChipSelectedPulse 1.4s ease-in-out infinite alternate;
+}
+
+.chip-suit-label {
+  font-family: var(--font-main);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-ink-2);
+  transition: color 0.2s ease;
+}
+
+.vegas-chip-btn.selected .chip-suit-label {
+  color: var(--gold);
+  font-weight: 900;
+}
+
+@keyframes vegasChipSelectedPulse {
+  0% {
+    box-shadow: 0 0 0 3px #facc15, 0 0 14px rgba(250, 204, 21, 0.8), 0 0 28px rgba(234, 179, 8, 0.5);
+    transform: translateY(-5px) scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0 3.5px #fef08a, 0 0 22px rgba(250, 204, 21, 1), 0 0 42px rgba(234, 179, 8, 0.8);
+    transform: translateY(-5px) scale(1.14);
+  }
+}
+
+/* Inline Las Vegas Chip Badge (for player lists & leaderboard) */
+.vegas-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-right: 5px;
+  vertical-align: middle;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.vegas-chip-badge.badge-spade {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1.5px solid #38bdf8;
+}
+
+.vegas-chip-badge.badge-heart {
+  background: #b91c1c;
+  color: #fecaca;
+  border: 1.5px solid #f87171;
+}
+
+.vegas-chip-badge.badge-diamond {
+  background: #c2410c;
+  color: #fed7aa;
+  border: 1.5px solid #fb923c;
+}
+
+.vegas-chip-badge.badge-club {
+  background: #15803d;
+  color: #bbf7d0;
+  border: 1.5px solid #4ade80;
+}
+
+/* 6 Casino Poker Chips (01 ♠ to 06 ♥) - Fallback */
 .avatar-selector {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--space-2xs);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
   margin-bottom: var(--space-md);
 }
 
 .avatar-btn {
   aspect-ratio: 1;
   min-width: 0;
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #fef3c7 50%, #f59e0b 85%, #b45309 100%);
-  color: #111827;
-  border: 2px dashed #78350f;
   border-radius: 50%;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  background: radial-gradient(circle at 45% 40%, #ffffff 0%, #fffef2 30%, #fef3c7 65%, #fde68a 88%, #d97706 100%);
+  border: 2px dashed #854d0e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  position: relative;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  user-select: none;
 }
 
+/* Inner golden concentric ring */
 .avatar-btn::after {
   content: "";
   position: absolute;
-  inset: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  inset: 2.5px;
   border-radius: 50%;
+  border: 1px solid rgba(180, 83, 9, 0.35);
   pointer-events: none;
 }
 
 .avatar-btn .avatar-num {
-  font-family: var(--font-card);
+  font-family: var(--font-card), "Playfair Display", "Times New Roman", serif;
   font-size: 1.05rem;
   font-weight: 900;
+  color: #0f172a;
   line-height: 1;
+  margin-top: -1px;
 }
 
 .avatar-btn .avatar-suit {
   font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Symbola", serif;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   line-height: 1;
+  margin-top: 1px;
 }
 
 .avatar-btn:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6);
-  border-color: #fff;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
+  border-color: #facc15;
 }
 
 .avatar-btn.selected {
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #fef08a 45%, #eab308 80%, #a16207 100%);
-  border: 2.5px solid #fff;
-  box-shadow: 0 0 0 3px var(--brass-gold), 0 8px 24px rgba(212, 175, 55, 0.6);
-  transform: translateY(-5px) scale(1.08);
+  background: radial-gradient(circle at 45% 40%, #ffffff 0%, #fffdf0 20%, #fef08a 55%, #fcd34d 85%, #f59e0b 100%) !important;
+  border: 3px solid #ffdc2e !important;
+  box-shadow: 
+    0 0 16px rgba(250, 204, 21, 0.95), 
+    0 0 32px rgba(234, 179, 8, 0.6), 
+    inset 0 0 8px rgba(250, 204, 21, 0.4) !important;
+  transform: translateY(-3px) scale(1.1);
+  z-index: 2;
+}
+
+.avatar-btn.selected::after {
+  border-color: rgba(250, 204, 21, 0.75);
 }
 
 .avatar-btn.selected .avatar-num {
   color: #000;
+  font-weight: 950;
 }
 
 /* Primary Action Button */
@@ -512,6 +649,117 @@ button.btn:disabled {
   font-size: .85rem;
   font-weight: 800;
   letter-spacing: .06em;
+}
+
+/* ===================================================
+   🎰 Casino Poker Chip Round Indicator (01 ♠ to 06 ♥)
+   Exact Match to High-Stakes Casino Felt Table
+   =================================================== */
+.casino-rounds-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 20, 14, 0.7);
+  border: 1.5px solid rgba(212, 175, 55, 0.35);
+  border-radius: 99px;
+  padding: 4px 10px;
+  box-shadow: 
+    inset 0 2px 6px rgba(0, 0, 0, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.casino-chip {
+  width: 38px;
+  height: 38px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Ivory / cream radial gradient with notched border */
+  background: radial-gradient(circle at 45% 40%, #ffffff 0%, #fffef2 30%, #fef3c7 65%, #fde68a 88%, #d97706 100%);
+  border: 2px dashed #854d0e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+/* Inner golden concentric ring */
+.casino-chip::before {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  pointer-events: none;
+}
+
+.casino-chip .chip-num {
+  font-family: var(--font-card), "Playfair Display", "Times New Roman", serif;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+.casino-chip .chip-suit {
+  font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Symbola", serif;
+  font-size: 0.72rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.casino-chip .chip-suit.suit-black {
+  color: #0f172a;
+}
+
+.casino-chip .chip-suit.suit-red {
+  color: #dc2626;
+}
+
+/* Active Chip: Golden Neon Glow & Solid Gold Ring (Image 2 - Chip 01) */
+.casino-chip.active {
+  background: radial-gradient(circle at 45% 40%, #ffffff 0%, #fffdf0 20%, #fef08a 55%, #fcd34d 85%, #f59e0b 100%) !important;
+  border: 3px solid #ffdc2e !important;
+  box-shadow: 
+    0 0 16px rgba(250, 204, 21, 0.95), 
+    0 0 32px rgba(234, 179, 8, 0.6), 
+    inset 0 0 8px rgba(250, 204, 21, 0.4) !important;
+  transform: scale(1.12);
+  z-index: 2;
+  animation: activeChipPulse 1.4s ease-in-out infinite alternate;
+}
+
+.casino-chip.active::before {
+  border-color: rgba(250, 204, 21, 0.75);
+}
+
+.casino-chip.active .chip-num {
+  color: #000;
+  font-weight: 950;
+}
+
+@keyframes activeChipPulse {
+  0% {
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.8), 0 0 24px rgba(234, 179, 8, 0.45);
+    transform: scale(1.08);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 1), 0 0 36px rgba(234, 179, 8, 0.75);
+    transform: scale(1.14);
+  }
+}
+
+/* Spent / Past Rounds */
+.casino-chip.spent {
+  opacity: 0.42;
+  filter: grayscale(0.65);
+  border-color: rgba(133, 77, 14, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  transform: scale(0.95);
 }
 
 .cylinder-hud {
@@ -1479,6 +1727,212 @@ body.theater-mode #host-options-preview .choice-btn .card-watermark {
 }
 body.theater-mode #host-timer-text {
   font-size: 2.2rem !important;
+}
+
+/* ===================================================
+   ⏳ Standalone Full-Screen Countdown Stage (หน้าเปล่าๆ นับถอยหลัง)
+   =================================================== */
+.countdown-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 440px;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.cd-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  border-radius: 99px;
+  padding: 6px 20px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+}
+
+.countdown-hero-circle {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(15, 23, 42, 0.85) 70%);
+  border: 4px solid var(--gold);
+  box-shadow: 
+    0 0 35px rgba(212, 175, 55, 0.45),
+    inset 0 0 30px rgba(212, 175, 55, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 24px auto;
+  position: relative;
+  animation: heroPulse 1s ease-in-out infinite;
+}
+
+.countdown-hero-circle.mobile {
+  width: 155px;
+  height: 155px;
+  border-width: 3.5px;
+  margin: 20px auto;
+}
+
+.countdown-hero-number {
+  font-size: 5.6rem;
+  font-weight: 950;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.85);
+  animation: numPop 1s ease infinite;
+}
+
+.countdown-hero-number.mobile {
+  font-size: 4.4rem;
+}
+
+.countdown-hero-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+.countdown-hero-track {
+  width: min(100%, 520px);
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 20px auto 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.countdown-hero-track.mobile {
+  width: 100%;
+  height: 10px;
+}
+
+.countdown-hero-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--gold), #fef08a);
+  border-radius: 99px;
+  box-shadow: 0 0 14px var(--gold);
+  transition: width 0.98s linear;
+}
+
+@keyframes heroPulse {
+  0% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.35), inset 0 0 20px rgba(212, 175, 55, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(212, 175, 55, 0.65), inset 0 0 35px rgba(212, 175, 55, 0.3);
+    transform: scale(1.04);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.35), inset 0 0 20px rgba(212, 175, 55, 0.15);
+    transform: scale(1);
+  }
+}
+
+@keyframes numPop {
+  0% { transform: scale(0.92); opacity: 0.9; }
+  35% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Theater Mode enhancements for Hero Countdown */
+body.theater-mode .countdown-hero-circle {
+  width: 270px;
+  height: 270px;
+  border-width: 6px;
+  margin: 36px auto;
+}
+body.theater-mode .countdown-hero-number {
+  font-size: 8.5rem;
+}
+body.theater-mode .countdown-stage h2 {
+  font-size: 3.4rem !important;
+}
+body.theater-mode .countdown-stage .subtitle {
+  font-size: 1.7rem !important;
+}
+body.theater-mode .countdown-hero-track {
+  width: min(100%, 750px);
+  height: 20px;
+}
+
+/* Theater Mode for Casino Chips HUD */
+body.theater-mode .casino-rounds-hud {
+  gap: 12px;
+  padding: 6px 16px;
+}
+body.theater-mode .casino-chip {
+  width: 48px;
+  height: 48px;
+}
+body.theater-mode .casino-chip .chip-num {
+  font-size: 1.15rem;
+}
+body.theater-mode .casino-chip .chip-suit {
+  font-size: 0.9rem;
+}
+
+/* Mobile Responsive for Casino Chips HUD */
+@media (max-width: 600px) {
+  .casino-rounds-hud {
+    gap: 4px;
+    padding: 3px 6px;
+  }
+  .casino-chip {
+    width: 29px;
+    height: 29px;
+    border-width: 1.5px;
+  }
+  .casino-chip .chip-num {
+    font-size: 0.72rem;
+  }
+  .casino-chip .chip-suit {
+    font-size: 0.55rem;
+    margin-top: 0px;
+  }
+  .casino-chip.active {
+    border-width: 2.5px !important;
+  }
+}
+
+.btn-toggle-bgm {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-toggle-bgm.active {
+  background: var(--gold);
+  color: #000;
+}
+
+@keyframes cdPulseScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {

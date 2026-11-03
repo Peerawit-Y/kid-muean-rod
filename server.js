@@ -187,7 +187,23 @@ io.on("connection", (socket) => {
   socket.on("player:join", (data, callback) => {
     const code = (data.roomCode || "").trim().toUpperCase();
     const rawName = (data.playerName || "").trim();
-    const avatar = data.avatar || "01";
+    const rawAvatar = (data.avatar || "spade").toString().trim();
+
+    // จัดการ Map ค่าชิปสัญลักษณ์ไพ่ (Spade, Heart, Diamond, Club)
+    let avatar = "spade";
+    if (["spade", "heart", "diamond", "club"].includes(rawAvatar.toLowerCase())) {
+      avatar = rawAvatar.toLowerCase();
+    } else if (rawAvatar === "02" || rawAvatar === "06") {
+      avatar = "heart";
+    } else if (rawAvatar === "03") {
+      avatar = "diamond";
+    } else if (rawAvatar === "04") {
+      avatar = "club";
+    } else if (rawAvatar === "01" || rawAvatar === "05") {
+      avatar = "spade";
+    } else {
+      avatar = rawAvatar;
+    }
 
     if (!code || !rawName) {
       return callback({ success: false, message: "กรุณาระบุรหัสห้องและชื่อของคุณ" });
@@ -231,7 +247,7 @@ io.on("connection", (socket) => {
       token: playerToken,
       name: validation.cleanName,
       cleanName: validation.cleanName,
-      avatar: "01",
+      avatar: avatar,
       alive: true,
       score: 0,
       audienceScore: 0,
@@ -248,6 +264,7 @@ io.on("connection", (socket) => {
     const playersList = Object.values(targetRoom.players).map(p => ({
       id: p.id,
       name: p.name,
+      avatar: p.avatar || "spade",
       alive: p.alive,
       connected: p.connected
     }));
@@ -265,6 +282,7 @@ io.on("connection", (socket) => {
       roomId: targetRoom.id,
       roomCode: code,
       playerName: validation.cleanName,
+      avatar: playerObj.avatar,
       playerCount: playersList.length,
       players: playersList
     });
@@ -304,6 +322,7 @@ io.on("connection", (socket) => {
     const playersList = Object.values(room.players).map(p => ({
       id: p.id,
       name: p.name,
+      avatar: p.avatar || "spade",
       alive: p.alive,
       connected: p.connected
     }));
@@ -476,6 +495,39 @@ io.on("connection", (socket) => {
     callback({ success: true, question: newQ });
   });
 
+  // --- HOST: การจัดการคูลดาวน์พักช่วงเปลี่ยนข้อ (Sync Cooldown) ---
+  socket.on("host:cooldown-start", (data) => {
+    const room = rooms.get(data.roomId);
+    if (!room || room.hostToken !== data.hostToken) return;
+    io.to(room.id).emit("game:cooldown-start", {
+      nextRound: data.nextRound,
+      totalSeconds: data.totalSeconds,
+      remainingSeconds: data.remainingSeconds || data.totalSeconds
+    });
+  });
+
+  socket.on("host:cooldown-tick", (data) => {
+    const room = rooms.get(data.roomId);
+    if (!room || room.hostToken !== data.hostToken) return;
+    io.to(room.id).emit("game:cooldown-tick", {
+      remainingSeconds: data.remainingSeconds
+    });
+  });
+
+  socket.on("host:cooldown-pause", (data) => {
+    const room = rooms.get(data.roomId);
+    if (!room || room.hostToken !== data.hostToken) return;
+    io.to(room.id).emit("game:cooldown-pause", {
+      paused: !!data.paused
+    });
+  });
+
+  socket.on("host:cooldown-cancel", (data) => {
+    const room = rooms.get(data.roomId);
+    if (!room || room.hostToken !== data.hostToken) return;
+    io.to(room.id).emit("game:cooldown-cancel");
+  });
+
   // --- HOST: เตะผู้เล่น ---
   socket.on("host:kick-player", (data) => {
     const room = rooms.get(data.roomId);
@@ -485,7 +537,7 @@ io.on("connection", (socket) => {
     if (p) {
       delete room.players[data.playerId];
       io.to(room.id).emit("player:kicked", { playerId: data.playerId, name: p.name });
-      const list = Object.values(room.players).map(pl => ({ id: pl.id, name: pl.name, alive: pl.alive, connected: pl.connected }));
+      const list = Object.values(room.players).map(pl => ({ id: pl.id, name: pl.name, avatar: pl.avatar || "spade", alive: pl.alive, connected: pl.connected }));
       io.to(room.id).emit("room:players-updated", { playerCount: list.length, players: list });
     }
   });
@@ -509,7 +561,7 @@ io.on("connection", (socket) => {
       p.audienceScore = 0;
     });
 
-    const list = Object.values(room.players).map(p => ({ id: p.id, name: p.name, alive: p.alive, connected: p.connected }));
+    const list = Object.values(room.players).map(p => ({ id: p.id, name: p.name, avatar: p.avatar || "spade", alive: p.alive, connected: p.connected }));
 
     io.to(room.id).emit("game:restarted", {
       status: "LOBBY",
@@ -534,7 +586,7 @@ io.on("connection", (socket) => {
           setTimeout(() => {
             if (!p.connected && room.status === "LOBBY" && room.players[socket.playerId]) {
               delete room.players[socket.playerId];
-              const list = Object.values(room.players).map(pl => ({ id: pl.id, name: pl.name, alive: pl.alive, connected: pl.connected }));
+              const list = Object.values(room.players).map(pl => ({ id: pl.id, name: pl.name, avatar: pl.avatar || "spade", alive: pl.alive, connected: pl.connected }));
               io.to(room.id).emit("room:players-updated", { playerCount: list.length, players: list });
             }
           }, 30000);
@@ -638,6 +690,7 @@ function calculateRoundResult(room) {
     .map(p => ({
       id: p.id,
       name: p.name,
+      avatar: p.avatar || "spade",
       score: p.score,
       alive: p.alive,
       audienceScore: p.audienceScore || 0

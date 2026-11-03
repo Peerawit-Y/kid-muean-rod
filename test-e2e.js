@@ -74,11 +74,15 @@ async function runTestSuite() {
     throw new Error("Profanity filter failed to block bad word");
   }
 
-  // Valid join Player 1
+  // Valid join Player 1 with avatar 'heart' (♥ โพแดง)
   const p1Join = await new Promise(resolve => {
-    p1Socket.emit("player:join", { roomCode, playerName: "Peemnaja" }, resolve);
+    p1Socket.emit("player:join", { roomCode, playerName: "Peemnaja", avatar: "heart" }, resolve);
   });
-  console.log("✓ 5. Player 1 joined:", p1Join.playerName, "Token:", p1Join.playerToken ? "OK" : "Missing");
+  if (p1Join.avatar !== "heart") {
+    serverProc.kill();
+    throw new Error(`Avatar should be heart but got: ${p1Join.avatar}`);
+  }
+  console.log("✓ 5. Player 1 joined:", p1Join.playerName, "Avatar:", p1Join.avatar, "Token:", p1Join.playerToken ? "OK" : "Missing");
 
   // Test Duplicate name
   const dupRes = await new Promise(resolve => {

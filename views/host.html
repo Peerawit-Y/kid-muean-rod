@@ -81,9 +81,22 @@
             <span>Auto-Pilot (เริ่มข้อต่อไปอัตโนมัติ)</span>
           </label>
           <label class="toggle-label">
-            <input type="checkbox" id="chk-bgm" checked onchange="toggleBGM(this.checked)">
-            <span>เสียงดนตรี BGM</span>
+            <input type="checkbox" id="chk-bgm" checked onchange="BGM.toggle(this.checked)">
+            <span>🎵 เสียงดนตรี BGM</span>
           </label>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 0.82rem; color: var(--text-muted);">
+            <span>🔊 เพลง:</span>
+            <input type="range" id="host-bgm-volume" min="0" max="1" step="0.05" value="0.55" style="width: 70px; height: 16px; cursor: pointer;" oninput="BGM.setVolume(this.value)">
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 0.82rem;">
+            <span>⏳ คูลดาวน์:</span>
+            <select id="select-cooldown-sec" style="min-height: 1.8rem; padding: 2px 6px; font-size: 0.82rem; width: auto; background: var(--color-paper); color: var(--text-main); border: 1px solid var(--card-border); border-radius: 4px;">
+              <option value="5" selected>5 วินาที (แนะนำ)</option>
+              <option value="8">8 วินาที</option>
+              <option value="10">10 วินาที</option>
+              <option value="0">ปิดนับถอยหลัง (รออาจารย์กดเอง)</option>
+            </select>
+          </div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button type="button" class="btn" id="btn-theater-mode" style="width: auto; padding: 5px 12px; margin: 0; font-size: 0.8rem; background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;" onclick="toggleTheaterMode()">
@@ -185,13 +198,31 @@
         <div class="game-header">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span id="host-round-text">สถานะ: LOBBY</span>
-            <div class="cylinder-hud" id="host-cylinder-hud" title="รังเพลิงลูกโม่ (Revolver Chambers)">
-              <span class="cylinder-chamber-dot" id="h-ch-1"></span>
-              <span class="cylinder-chamber-dot" id="h-ch-2"></span>
-              <span class="cylinder-chamber-dot" id="h-ch-3"></span>
-              <span class="cylinder-chamber-dot" id="h-ch-4"></span>
-              <span class="cylinder-chamber-dot" id="h-ch-5"></span>
-              <span class="cylinder-chamber-dot" id="h-ch-6"></span>
+            <div class="casino-rounds-hud" id="host-chip-hud" title="รอบการแข่งขัน (Casino Round Chips)">
+              <div class="casino-chip" id="h-chip-1" data-round="1">
+                <span class="chip-num">01</span>
+                <span class="chip-suit suit-black">♠</span>
+              </div>
+              <div class="casino-chip" id="h-chip-2" data-round="2">
+                <span class="chip-num">02</span>
+                <span class="chip-suit suit-red">♥</span>
+              </div>
+              <div class="casino-chip" id="h-chip-3" data-round="3">
+                <span class="chip-num">03</span>
+                <span class="chip-suit suit-red">♦</span>
+              </div>
+              <div class="casino-chip" id="h-chip-4" data-round="4">
+                <span class="chip-num">04</span>
+                <span class="chip-suit suit-black">♣</span>
+              </div>
+              <div class="casino-chip" id="h-chip-5" data-round="5">
+                <span class="chip-num">05</span>
+                <span class="chip-suit suit-black">♠</span>
+              </div>
+              <div class="casino-chip" id="h-chip-6" data-round="6">
+                <span class="chip-num">06</span>
+                <span class="chip-suit suit-red">♥</span>
+              </div>
             </div>
           </div>
           <span id="host-timer-text" style="color: var(--primary); font-size: 1.5rem; font-weight: 800;">--:--</span>
@@ -267,8 +298,37 @@
 
         <div id="host-result-bars" style="display: none; margin-bottom: 20px;"></div>
 
-        <div id="auto-status-hint" style="text-align: center; color: var(--gold); font-size: 1rem; font-weight: 600; margin-bottom: 12px; display: none;">
-          ระบบจะเริ่มรอบต่อไปอัตโนมัติใน <span id="auto-sec-left">6</span> วินาที
+        <!-- Standalone Hero Countdown Stage (หน้าเปล่าๆ นับถอยหลังสำหรับจอใหญ่) -->
+        <div id="host-cooldown-stage" class="countdown-stage" style="display: none;">
+          <div class="cd-stage-badge">
+            <span>⏳ PREPARE · พักช่วงเปลี่ยนข้อ</span>
+          </div>
+
+          <h2 style="font-size: clamp(2rem, 3.5vw, 3rem); margin-top: 14px; margin-bottom: 6px; color: var(--text-main);">
+            เตรียมพร้อมสำหรับรอบที่ <strong id="h-cd-next-round-num" style="color: var(--primary);">2</strong>
+          </h2>
+          <p class="subtitle" id="h-cd-subtitle" style="font-size: 1.15rem; color: var(--text-muted); margin-bottom: 24px;">
+            คำถามข้อต่อไปกำลังจะเริ่มขึ้นใน...
+          </p>
+
+          <!-- Giant Glowing Circle Number -->
+          <div class="countdown-hero-circle">
+            <div class="countdown-hero-number" id="h-cd-clock">5</div>
+            <div class="countdown-hero-label">วินาที</div>
+          </div>
+
+          <div class="countdown-hero-track">
+            <div class="countdown-hero-bar" id="h-cd-bar"></div>
+          </div>
+
+          <div style="display: flex; gap: 14px; justify-content: center; align-items: center; margin-top: 30px; flex-wrap: wrap;">
+            <button type="button" class="btn h-btn-skip" style="width: auto; padding: 10px 24px; font-size: 1rem;" onclick="handleSkipCooldown()">
+              ⚡ เริ่มข้อถัดไปทันที (Skip)
+            </button>
+            <button type="button" class="btn h-btn-pause" id="h-btn-pause" style="width: auto; padding: 10px 24px; font-size: 1rem;" onclick="handleTogglePauseCooldown()">
+              ⏸️ หยุดเวลาพัก (อธิบายคำตอบ)
+            </button>
+          </div>
         </div>
 
         <div id="host-leaderboard-box" style="display: none; margin-bottom: 20px;">
@@ -305,14 +365,27 @@
 
     <script>
       // ==========================================
-      // 1. Web Audio Synthesizer (SFX & Tension BGM)
+      // 1. Web Audio Synthesizer (SFX & Dynamic Game Show BGM)
       // ==========================================
       let audioCtx = null;
+      let bgmGainNode = null;
+      let sfxGainNode = null;
+      let currentBgmVolume = 0.55;
+      let isBgmEnabled = true;
 
       function getAudioContext() {
         if (!audioCtx) {
           const AudioClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioClass) audioCtx = new AudioClass();
+          if (AudioClass) {
+            audioCtx = new AudioClass();
+            bgmGainNode = audioCtx.createGain();
+            bgmGainNode.gain.setValueAtTime(currentBgmVolume, audioCtx.currentTime);
+            bgmGainNode.connect(audioCtx.destination);
+
+            sfxGainNode = audioCtx.createGain();
+            sfxGainNode.gain.setValueAtTime(0.85, audioCtx.currentTime);
+            sfxGainNode.connect(audioCtx.destination);
+          }
         }
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
@@ -324,6 +397,7 @@
         try {
           getAudioContext();
           SFX.click();
+          if (isBgmEnabled) BGM.setMode("LOBBY");
         } catch(e) {}
         const overlay = document.getElementById("audio-unlock-overlay");
         if (overlay) overlay.style.display = "none";
@@ -333,49 +407,257 @@
         SFX.reveal();
       }
 
-      let bgmInterval = null;
-      let isBgmEnabled = true;
+      // Procedural Game Show BGM Synthesizer
+      const BGM = {
+        mode: "OFF", // "LOBBY", "ANSWERING", "ANSWERING_TENSE", "COOLDOWN", "OFF"
+        timer: null,
+        step: 0,
+        nextNoteTime: 0,
+        bpm: 112,
 
-      function toggleBGM(enabled) {
-        isBgmEnabled = enabled;
-        if (!enabled) stopBGM();
-      }
+        setVolume: function(val) {
+          currentBgmVolume = Math.max(0, Math.min(1, parseFloat(val)));
+          if (bgmGainNode && audioCtx) {
+            bgmGainNode.gain.setValueAtTime(isBgmEnabled ? currentBgmVolume : 0, audioCtx.currentTime);
+          }
+        },
 
-      function startBGM() {
-        if (!isBgmEnabled || bgmInterval) return;
-        const ctx = getAudioContext();
-        if (!ctx) return;
+        toggle: function(enabled) {
+          isBgmEnabled = enabled;
+          if (bgmGainNode && audioCtx) {
+            bgmGainNode.gain.setValueAtTime(enabled ? currentBgmVolume : 0, audioCtx.currentTime);
+          }
+          if (!enabled) {
+            this.stop();
+          } else {
+            this.start(this.mode === "OFF" ? "LOBBY" : this.mode);
+          }
+        },
 
-        const bassNotes = [110.00, 110.00, 130.81, 123.47];
-        let step = 0;
-
-        function playStep() {
+        start: function(mode) {
+          this.mode = mode || "LOBBY";
           if (!isBgmEnabled) return;
+          const ctx = getAudioContext();
+          if (!ctx) return;
+
+          if (this.timer) clearInterval(this.timer);
+          this.step = 0;
+          this.nextNoteTime = ctx.currentTime + 0.05;
+          this.bpm = (this.mode === "ANSWERING_TENSE") ? 128 : 112;
+
+          this.timer = setInterval(() => {
+            this.schedule();
+          }, 60);
+        },
+
+        setMode: function(newMode) {
+          if (this.mode === newMode) return;
+          this.mode = newMode;
+          if (newMode === "OFF") {
+            this.stop();
+          } else {
+            this.bpm = (newMode === "ANSWERING_TENSE") ? 128 : 112;
+            if (!this.timer && isBgmEnabled) {
+              this.start(newMode);
+            }
+          }
+        },
+
+        stop: function() {
+          if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+          }
+        },
+
+        schedule: function() {
+          if (!isBgmEnabled || this.mode === "OFF") return;
+          const ctx = getAudioContext();
+          if (!ctx) return;
+
+          const lookahead = 0.15;
+          const secondsPerBeat = 60.0 / this.bpm;
+          const sixteenth = secondsPerBeat / 4;
+
+          while (this.nextNoteTime < ctx.currentTime + lookahead) {
+            this.playTick(this.nextNoteTime, this.step);
+            this.nextNoteTime += sixteenth;
+            this.step++;
+          }
+        },
+
+        playTick: function(time, stepIndex) {
+          const ctx = getAudioContext();
+          if (!ctx || !bgmGainNode) return;
+
+          const stepInBar = stepIndex % 16;
+          const barIndex = Math.floor(stepIndex / 16);
+
+          if (this.mode === "LOBBY") {
+            const chords = [
+              [220, 261.63, 329.63, 392.00, 493.88],
+              [174.61, 261.63, 329.63, 392.00, 523.25],
+              [130.81, 261.63, 329.63, 392.00, 493.88],
+              [196.00, 246.94, 293.66, 349.23, 440.00]
+            ];
+            const currentChord = chords[barIndex % chords.length];
+
+            if (stepInBar === 0 || stepInBar === 8) {
+              const bassOsc = ctx.createOscillator();
+              const bassGain = ctx.createGain();
+              bassOsc.type = "triangle";
+              bassOsc.frequency.setValueAtTime(currentChord[0] / 2, time);
+              bassGain.gain.setValueAtTime(0.16, time);
+              bassGain.gain.exponentialRampToValueAtTime(0.001, time + 0.38);
+              bassOsc.connect(bassGain);
+              bassGain.connect(bgmGainNode);
+              bassOsc.start(time);
+              bassOsc.stop(time + 0.38);
+            }
+
+            if (stepInBar === 0 || stepInBar === 6) {
+              currentChord.slice(1).forEach((freq) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(freq, time);
+                gain.gain.setValueAtTime(0.035, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.55);
+                osc.connect(gain);
+                gain.connect(bgmGainNode);
+                osc.start(time);
+                osc.stop(time + 0.55);
+              });
+            }
+
+            if (stepInBar === 4 || stepInBar === 12) {
+              this.playClickPulse(time, 0.04, 3200);
+            }
+          } 
+          else if (this.mode === "ANSWERING" || this.mode === "ANSWERING_TENSE") {
+            const isTense = (this.mode === "ANSWERING_TENSE");
+            const bassRoots = [73.42, 87.31, 98.00, 110.00];
+            const root = bassRoots[barIndex % bassRoots.length];
+
+            if (stepInBar % 2 === 0) {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              const filter = ctx.createBiquadFilter();
+
+              osc.type = isTense ? "sawtooth" : "triangle";
+              osc.frequency.setValueAtTime(root, time);
+
+              filter.type = "lowpass";
+              filter.frequency.setValueAtTime(isTense ? 450 : 220, time);
+
+              gain.gain.setValueAtTime(isTense ? 0.22 : 0.14, time);
+              gain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
+
+              osc.connect(filter);
+              filter.connect(gain);
+              gain.connect(bgmGainNode);
+
+              osc.start(time);
+              osc.stop(time + 0.16);
+            }
+
+            const isQuarter = (stepInBar % 4 === 0);
+            this.playClickPulse(time, isQuarter ? (isTense ? 0.12 : 0.08) : (isTense ? 0.05 : 0.025), isQuarter ? 5500 : 7000);
+
+            if (isTense && isQuarter) {
+              const kick = ctx.createOscillator();
+              const kickGain = ctx.createGain();
+              kick.type = "sine";
+              kick.frequency.setValueAtTime(110, time);
+              kick.frequency.exponentialRampToValueAtTime(35, time + 0.12);
+              kickGain.gain.setValueAtTime(0.32, time);
+              kickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.14);
+              kick.connect(kickGain);
+              kickGain.connect(bgmGainNode);
+              kick.start(time);
+              kick.stop(time + 0.14);
+            }
+
+            if (stepInBar === 0) {
+              const padNotes = [root * 2, root * 2.4, root * 3];
+              padNotes.forEach(freq => {
+                const pOsc = ctx.createOscillator();
+                const pGain = ctx.createGain();
+                pOsc.type = "sawtooth";
+                pOsc.frequency.setValueAtTime(freq, time);
+
+                const pFilt = ctx.createBiquadFilter();
+                pFilt.type = "lowpass";
+                pFilt.frequency.setValueAtTime(isTense ? 600 : 320, time);
+
+                pGain.gain.setValueAtTime(0.025, time);
+                pGain.gain.exponentialRampToValueAtTime(0.001, time + 1.1);
+
+                pOsc.connect(pFilt);
+                pFilt.connect(pGain);
+                pGain.connect(bgmGainNode);
+                pOsc.start(time);
+                pOsc.stop(time + 1.1);
+              });
+            }
+          }
+          else if (this.mode === "COOLDOWN") {
+            if (stepInBar === 0 || stepInBar === 8) {
+              const chime = ctx.createOscillator();
+              const chimeGain = ctx.createGain();
+              chime.type = "sine";
+              const notes = [523.25, 659.25, 783.99, 1046.50];
+              chime.frequency.setValueAtTime(notes[(stepIndex / 4) % notes.length], time);
+              chimeGain.gain.setValueAtTime(0.12, time);
+              chimeGain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+              chime.connect(chimeGain);
+              chimeGain.connect(bgmGainNode);
+              chime.start(time);
+              chime.stop(time + 0.35);
+            }
+            if (stepInBar % 4 === 0) {
+              this.playClickPulse(time, 0.035, 6000);
+            }
+          }
+        },
+
+        playClickPulse: function(time, vol, freq) {
+          const ctx = getAudioContext();
+          if (!ctx || !bgmGainNode) return;
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(bassNotes[step % bassNotes.length], ctx.currentTime);
-          gain.gain.setValueAtTime(0.08, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq || 5000, time);
+          gain.gain.setValueAtTime(vol || 0.05, time);
+          gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.015);
           osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.35);
-          step++;
+          gain.connect(bgmGainNode);
+          osc.start(time);
+          osc.stop(time + 0.015);
         }
+      };
 
-        playStep();
-        bgmInterval = setInterval(playStep, 450);
-      }
-
-      function stopBGM() {
-        if (bgmInterval) {
-          clearInterval(bgmInterval);
-          bgmInterval = null;
-        }
-      }
+      // Compatibility bridges
+      function startBGM() { BGM.setMode("ANSWERING"); }
+      function stopBGM() { BGM.setMode("OFF"); }
+      function toggleBGM(enabled) { BGM.toggle(enabled); }
 
       const SFX = {
+        countdownBeep: function(isFinal) {
+          const ctx = getAudioContext();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          const freq = isFinal ? 880 : 587.33;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(isFinal ? 0.3 : 0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isFinal ? 0.35 : 0.18));
+          osc.connect(gain);
+          gain.connect(sfxGainNode || ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + (isFinal ? 0.35 : 0.18));
+        },
         click: function() {
           const ctx = getAudioContext();
           if (!ctx) return;
@@ -655,8 +937,8 @@
       function handleCloseRoom() {
         if (!confirm("ต้องการปิดห้องนี้และกลับไปหน้าสร้างห้องใหม่ใช่หรือไม่?")) return;
         SFX.click();
-        cancelAutoCountdown();
-        stopBGM();
+        cancelCooldown();
+        BGM.setMode("OFF");
         localStorage.removeItem("host_session_backup");
         document.getElementById("host-monitor-view").style.display = "none";
         document.getElementById("host-create-view").style.display = "block";
@@ -884,28 +1166,54 @@
           }
         }
 
+        const VEGAS_SUITS = {
+          spade: { id: "spade", symbol: "♠", name: "โพดำ", badgeClass: "badge-spade" },
+          heart: { id: "heart", symbol: "♥", name: "โพแดง", badgeClass: "badge-heart" },
+          diamond: { id: "diamond", symbol: "♦", name: "ข้าวหลามตัด", badgeClass: "badge-diamond" },
+          club: { id: "club", symbol: "♣", name: "ดอกจิก", badgeClass: "badge-club" }
+        };
+        function normalizeAvatar(val) {
+          if (!val) return "spade";
+          const s = String(val).toLowerCase();
+          if (s === "heart" || s === "02" || s === "06" || s === "♥") return "heart";
+          if (s === "diamond" || s === "03" || s === "♦") return "diamond";
+          if (s === "club" || s === "04" || s === "♣") return "club";
+          return "spade";
+        }
+
         const tagsBox = document.getElementById("host-player-tags");
         tagsBox.innerHTML = data.players.map(p => {
+          const c = VEGAS_SUITS[normalizeAvatar(p.avatar)];
           const color = p.alive ? "var(--color-ink-2)" : "var(--danger)";
           const text = p.alive ? escapeHtml(p.name) : `OUT · ${escapeHtml(p.name)}`;
           const kickBtn = hostSession.currentStatus === "LOBBY" 
             ? `<button class="kick-btn" onclick="kickPlayer('${p.id}', '${escapeHtml(p.name)}')">×</button>` 
             : "";
-          return `<span class="player-tag" style="color: ${color};">${text} ${kickBtn}</span>`;
+          return `<span class="player-tag" style="color: ${color};"><span class="vegas-chip-badge ${c.badgeClass}">${c.symbol}</span> ${text} ${kickBtn}</span>`;
         }).join("");
       });
 
-      // รังเพลิงลูกโม่บนหน้าจอ Host (Revolver Chambers)
+      // รอบการแข่งขันบนหน้าจอ Host (Casino Round Chips 01-06)
       function updateHostCylinder(round, maxRounds) {
         const activeIdx = ((round - 1) % 6) + 1;
         for (let i = 1; i <= 6; i++) {
+          const chip = document.getElementById("h-chip-" + i);
+          if (chip) {
+            chip.className = "casino-chip";
+            if (i < activeIdx) {
+              chip.classList.add("spent");
+            } else if (i === activeIdx) {
+              chip.classList.add("active");
+            }
+          }
           const dot = document.getElementById("h-ch-" + i);
-          if (!dot) continue;
-          dot.className = "cylinder-chamber-dot";
-          if (i < activeIdx) {
-            dot.classList.add("spent");
-          } else if (i === activeIdx) {
-            dot.classList.add("active");
+          if (dot) {
+            dot.className = "cylinder-chamber-dot";
+            if (i < activeIdx) {
+              dot.classList.add("spent");
+            } else if (i === activeIdx) {
+              dot.classList.add("active");
+            }
           }
         }
       }
@@ -914,8 +1222,8 @@
       socket.on("game:round-started", function(data) {
         hostSession.currentStatus = "ANSWERING";
         hostSession.currentRound = data.round;
-        startBGM();
-        cancelAutoCountdown();
+        cancelCooldown();
+        BGM.setMode("ANSWERING");
         updateHostCylinder(data.round, hostSession.maxRounds);
         SFX.cylinderSpin();
 
@@ -951,7 +1259,10 @@
         document.getElementById("host-fun-stats").style.display = "none";
         document.getElementById("host-leaderboard-box").style.display = "none";
         document.getElementById("host-early-hint").style.display = "none";
+        const cdStage = document.getElementById("host-cooldown-stage");
+        if (cdStage) cdStage.style.display = "none";
 
+        actBtn.style.display = "block";
         actBtn.innerText = "ล็อกคำตอบ & สรุปผลทันที";
         actBtn.style.background = "var(--danger)";
         actBtn.disabled = false;
@@ -962,8 +1273,14 @@
         const sec = data.remainingSeconds;
         document.getElementById("host-timer-text").innerText = `${sec}s`;
 
-        if (sec <= 5 && sec > 0) SFX.dangerTick();
-        else if (sec <= 10 && sec > 0) SFX.tick();
+        if (sec <= 10 && sec > 0) {
+          document.getElementById("host-timer-text").style.color = "var(--color-danger)";
+          BGM.setMode("ANSWERING_TENSE");
+          if (sec <= 5) SFX.dangerTick();
+          else SFX.tick();
+        } else {
+          document.getElementById("host-timer-text").style.color = "var(--primary)";
+        }
       });
 
       // อัปเดตจำนวนคนที่ส่งคำตอบแล้วแบบเรียลไทม์
@@ -978,7 +1295,7 @@
 
       // ผลลัพธ์รอบ / จบเกม
       socket.on("game:round-result", function(data) {
-        stopBGM();
+        BGM.setMode("OFF");
         document.getElementById("btn-skip-round").style.display = "none";
         hostSession.isAutoCalculating = false;
 
@@ -1034,11 +1351,12 @@
 
           renderHostResult(res);
 
-          if (isAutoPilotEnabled() && !hostSession.autoNextTimer) {
-            startAutoNextCountdown(6, function() {
-              handleStartNextRound();
-            });
-          }
+          // เริ่มคูลดาวน์เปลี่ยนข้อหลัง Staggered Reveal เฉลยเสร็จ
+          setTimeout(() => {
+            if (hostSession.currentStatus === "RESULT" && !res.isGameOver && isAutoPilotEnabled()) {
+              startNextRoundCooldown();
+            }
+          }, 3500);
         }
       });
 
@@ -1046,6 +1364,8 @@
       socket.on("game:restarted", function(data) {
         hostSession.currentStatus = "LOBBY";
         hostSession.currentRound = 0;
+        cancelCooldown();
+        BGM.setMode("LOBBY");
         document.getElementById("host-round-text").innerText = `เตรียมพร้อม (แข่งทั้งหมด ${hostSession.maxRounds} รอบ)`;
         document.getElementById("host-timer-text").innerText = "--:--";
         document.getElementById("host-question-preview").style.display = "none";
@@ -1058,6 +1378,8 @@
         if (optBox) optBox.style.display = "none";
 
         for (let i = 1; i <= 6; i++) {
+          const chip = document.getElementById("h-chip-" + i);
+          if (chip) chip.className = "casino-chip";
           const dot = document.getElementById("h-ch-" + i);
           if (dot) dot.className = "cylinder-chamber-dot";
         }
@@ -1069,31 +1391,135 @@
         actBtn.disabled = false;
       });
 
-      function startAutoNextCountdown(seconds, callback) {
-        let sec = seconds;
-        const hint = document.getElementById("auto-status-hint");
-        const secSpan = document.getElementById("auto-sec-left");
-        hint.style.display = "block";
-        secSpan.innerText = sec;
+      // ==========================================
+      // ⏳ Next-Round Cooldown Engine (พักช่วงเปลี่ยนข้อ)
+      // ==========================================
+      let cooldownTimer = null;
+      let cooldownRemaining = 0;
+      let cooldownTotal = 5;
+      let isCooldownPaused = false;
 
-        clearInterval(hostSession.autoNextTimer);
-        hostSession.autoNextTimer = setInterval(() => {
-          sec--;
-          if (secSpan) secSpan.innerText = sec;
-          if (sec <= 0) {
-            cancelAutoCountdown();
-            callback();
+      function startNextRoundCooldown(totalSeconds) {
+        cancelCooldown();
+        const selEl = document.getElementById("select-cooldown-sec");
+        const selVal = selEl ? parseInt(selEl.value, 10) : 5;
+        const duration = (totalSeconds !== undefined) ? totalSeconds : selVal;
+        
+        if (duration <= 0) {
+          // ถ้าเลือก 0 วินาที หมายถึงให้อาจารย์เป็นคนกดปุ่มเอง
+          cancelCooldown();
+          return;
+        }
+
+        cooldownTotal = duration;
+        cooldownRemaining = duration;
+        isCooldownPaused = false;
+
+        // ซ่อนหน้าจอผลลัพธ์และตัวเลือกเดิม เพื่อเปิดหน้าเปล่าๆ นับถอยหลังเต็มจอ!
+        document.getElementById("host-result-bars").style.display = "none";
+        document.getElementById("host-leaderboard-box").style.display = "none";
+        document.getElementById("host-fun-stats").style.display = "none";
+        document.getElementById("host-podium-wrap").style.display = "none";
+        document.getElementById("host-question-preview").style.display = "none";
+        const optBox = document.getElementById("host-options-preview");
+        if (optBox) optBox.style.display = "none";
+        const actBtn = document.getElementById("btn-action");
+        if (actBtn) actBtn.style.display = "none";
+
+        const stage = document.getElementById("host-cooldown-stage");
+        const nextRoundNum = hostSession.currentRound + 1;
+        document.getElementById("h-cd-next-round-num").innerText = nextRoundNum;
+        document.getElementById("h-cd-clock").innerText = cooldownRemaining;
+        const fillBar = document.getElementById("h-cd-bar");
+        if (fillBar) fillBar.style.width = "100%";
+
+        const pauseBtn = document.getElementById("h-btn-pause");
+        if (pauseBtn) pauseBtn.innerText = "⏸️ หยุดพัก (อธิบายคำตอบ)";
+
+        stage.style.display = "flex";
+        BGM.setMode("COOLDOWN");
+
+        socket.emit("host:cooldown-start", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken,
+          nextRound: nextRoundNum,
+          totalSeconds: cooldownTotal,
+          remainingSeconds: cooldownRemaining
+        });
+
+        cooldownTimer = setInterval(() => {
+          if (isCooldownPaused) return;
+
+          cooldownRemaining--;
+          const pct = Math.max(0, (cooldownRemaining / cooldownTotal) * 100);
+          if (fillBar) fillBar.style.width = pct + "%";
+          const clock = document.getElementById("h-cd-clock");
+          if (clock) clock.innerText = cooldownRemaining;
+
+          if (cooldownRemaining <= 3 && cooldownRemaining > 0) {
+            SFX.countdownBeep(cooldownRemaining === 1);
+          }
+
+          socket.emit("host:cooldown-tick", {
+            roomId: hostSession.roomId,
+            hostToken: hostSession.hostToken,
+            remainingSeconds: cooldownRemaining
+          });
+
+          if (cooldownRemaining <= 0) {
+            cancelCooldown();
+            handleStartNextRound();
           }
         }, 1000);
       }
 
-      function cancelAutoCountdown() {
-        if (hostSession.autoNextTimer) {
-          clearInterval(hostSession.autoNextTimer);
-          hostSession.autoNextTimer = null;
+      function cancelCooldown() {
+        if (cooldownTimer) {
+          clearInterval(cooldownTimer);
+          cooldownTimer = null;
         }
-        const hint = document.getElementById("auto-status-hint");
-        if (hint) hint.style.display = "none";
+        isCooldownPaused = false;
+        const stage = document.getElementById("host-cooldown-stage");
+        if (stage) stage.style.display = "none";
+
+        const actBtn = document.getElementById("btn-action");
+        if (actBtn) actBtn.style.display = "block";
+
+        if (hostSession.roomId && hostSession.hostToken) {
+          socket.emit("host:cooldown-cancel", {
+            roomId: hostSession.roomId,
+            hostToken: hostSession.hostToken
+          });
+        }
+      }
+
+      function cancelAutoCountdown() {
+        cancelCooldown();
+      }
+
+      function handleSkipCooldown() {
+        SFX.click();
+        cancelCooldown();
+        handleStartNextRound();
+      }
+
+      function handleTogglePauseCooldown() {
+        SFX.click();
+        isCooldownPaused = !isCooldownPaused;
+        const pauseBtn = document.getElementById("h-btn-pause");
+        if (isCooldownPaused) {
+          if (pauseBtn) pauseBtn.innerText = "▶️ เริ่มนับต่อ (Resume)";
+          BGM.setMode("LOBBY");
+        } else {
+          if (pauseBtn) pauseBtn.innerText = "⏸️ หยุดพัก (อธิบายคำตอบ)";
+          BGM.setMode("COOLDOWN");
+        }
+
+        socket.emit("host:cooldown-pause", {
+          roomId: hostSession.roomId,
+          hostToken: hostSession.hostToken,
+          paused: isCooldownPaused
+        });
       }
 
       let hostRevealTimers = [];
@@ -1104,6 +1530,9 @@
         hostRevealTimers = [];
         if (currentHostResult) {
           finalizeHostResultInstant(currentHostResult);
+          if (!currentHostResult.isGameOver && isAutoPilotEnabled()) {
+            startNextRoundCooldown();
+          }
         }
       }
 
@@ -1269,10 +1698,11 @@
             else if (idx === 1) { rankBadge = "02"; rankClass = "rank-2"; }
             else if (idx === 2) { rankBadge = "03"; rankClass = "rank-3"; }
 
+            const c = VEGAS_SUITS[normalizeAvatar(p.avatar)];
             rows += `
               <tr class="${rankClass}">
                 <td style="font-weight: 800;">${rankBadge}</td>
-                <td>${escapeHtml(p.name)}</td>
+                <td><span class="vegas-chip-badge ${c.badgeClass}">${c.symbol}</span> ${escapeHtml(p.name)}</td>
                 <td style="text-align: right; font-weight: 700;">${Number(p.score).toLocaleString()} แต้ม</td>
                 <td style="text-align: right; color: var(--gold);">${Number(p.audienceScore || 0).toLocaleString()}</td>
               </tr>

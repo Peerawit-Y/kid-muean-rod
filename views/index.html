@@ -72,6 +72,11 @@
       </div>
       
       <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- ตัวเปิด/ปิดเสียงเพลงคลอ -->
+        <button type="button" id="btn-toggle-player-bgm" class="btn-toggle-bgm" onclick="togglePlayerBGM()">
+          🎵 เพลง: ปิด
+        </button>
+
         <!-- ตัวปรับระดับเสียงบนมือถือ -->
         <div class="volume-control-box">
           <span>🔊</span>
@@ -95,31 +100,106 @@
       <p class="subtitle">คุณจะรอด... ถ้าคุณคิดเหมือนคนส่วนใหญ่!</p>
 
       <div class="form-group">
-        <label>เลือกเครื่องหมายชิปประจำตัว (Casino Chips 01 - 06)</label>
-        <div class="avatar-selector" id="avatar-list">
-          <button type="button" class="avatar-btn selected" data-avatar="01">
-            <span class="avatar-num">01</span>
-            <span class="avatar-suit" style="color: var(--suit-black);">♠</span>
+        <label>เลือกเครื่องหมายชิปประจำตัว (Las Vegas Card Suit Chips)</label>
+        <div class="avatar-selector vegas-chip-grid" id="avatar-list">
+          <!-- ♠ Spade -->
+          <button type="button" class="vegas-chip-btn selected" data-avatar="spade" title="ชิปโพดำ (Spade)">
+            <div class="vegas-chip-wrapper">
+              <svg viewBox="0 0 100 100" class="vegas-chip-svg">
+                <defs>
+                  <path id="t-arc-spade" d="M 23,50 A 27,27 0 0,1 77,50" fill="none" />
+                  <path id="b-arc-spade" d="M 77,50 A 27,27 0 0,1 23,50" fill="none" />
+                </defs>
+                <circle cx="50" cy="50" r="47" fill="#1e293b" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#38bdf8" stroke-width="10" stroke-dasharray="8 25" stroke-dashoffset="4"/>
+                <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="2 6"/>
+                <circle cx="50" cy="50" r="33" fill="#1e293b" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text font-family="Georgia, serif" font-size="4.6" font-weight="900" fill="#334155" letter-spacing="0.7">
+                  <textPath href="#t-arc-spade" startOffset="50%" text-anchor="middle">LAS VEGAS</textPath>
+                </text>
+                <text font-family="Georgia, serif" font-size="3.8" font-weight="800" fill="#64748b" letter-spacing="0.6">
+                  <textPath href="#b-arc-spade" startOffset="50%" text-anchor="middle">POKER CLUB</textPath>
+                </text>
+                <text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="900" fill="#0f172a" font-family="Apple Symbols, Segoe UI Symbol, serif">♠</text>
+              </svg>
+            </div>
+            <span class="chip-suit-label">♠ โพดำ</span>
           </button>
-          <button type="button" class="avatar-btn" data-avatar="02">
-            <span class="avatar-num">02</span>
-            <span class="avatar-suit" style="color: var(--suit-red);">♥</span>
+
+          <!-- ♥ Heart -->
+          <button type="button" class="vegas-chip-btn" data-avatar="heart" title="ชิปโพแดง (Heart)">
+            <div class="vegas-chip-wrapper">
+              <svg viewBox="0 0 100 100" class="vegas-chip-svg">
+                <defs>
+                  <path id="t-arc-heart" d="M 23,50 A 27,27 0 0,1 77,50" fill="none" />
+                  <path id="b-arc-heart" d="M 77,50 A 27,27 0 0,1 23,50" fill="none" />
+                </defs>
+                <circle cx="50" cy="50" r="47" fill="#b91c1c" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#fecaca" stroke-width="10" stroke-dasharray="8 25" stroke-dashoffset="4"/>
+                <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="2 6"/>
+                <circle cx="50" cy="50" r="33" fill="#b91c1c" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text font-family="Georgia, serif" font-size="4.6" font-weight="900" fill="#334155" letter-spacing="0.7">
+                  <textPath href="#t-arc-heart" startOffset="50%" text-anchor="middle">LAS VEGAS</textPath>
+                </text>
+                <text font-family="Georgia, serif" font-size="3.8" font-weight="800" fill="#64748b" letter-spacing="0.6">
+                  <textPath href="#b-arc-heart" startOffset="50%" text-anchor="middle">POKER CLUB</textPath>
+                </text>
+                <text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="900" fill="#dc2626" font-family="Apple Symbols, Segoe UI Symbol, serif">♥</text>
+              </svg>
+            </div>
+            <span class="chip-suit-label">♥ โพแดง</span>
           </button>
-          <button type="button" class="avatar-btn" data-avatar="03">
-            <span class="avatar-num">03</span>
-            <span class="avatar-suit" style="color: var(--suit-red);">♦</span>
+
+          <!-- ♦ Diamond -->
+          <button type="button" class="vegas-chip-btn" data-avatar="diamond" title="ชิปข้าวหลามตัด (Diamond)">
+            <div class="vegas-chip-wrapper">
+              <svg viewBox="0 0 100 100" class="vegas-chip-svg">
+                <defs>
+                  <path id="t-arc-diamond" d="M 23,50 A 27,27 0 0,1 77,50" fill="none" />
+                  <path id="b-arc-diamond" d="M 77,50 A 27,27 0 0,1 23,50" fill="none" />
+                </defs>
+                <circle cx="50" cy="50" r="47" fill="#c2410c" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#fed7aa" stroke-width="10" stroke-dasharray="8 25" stroke-dashoffset="4"/>
+                <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="2 6"/>
+                <circle cx="50" cy="50" r="33" fill="#c2410c" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text font-family="Georgia, serif" font-size="4.6" font-weight="900" fill="#334155" letter-spacing="0.7">
+                  <textPath href="#t-arc-diamond" startOffset="50%" text-anchor="middle">LAS VEGAS</textPath>
+                </text>
+                <text font-family="Georgia, serif" font-size="3.8" font-weight="800" fill="#64748b" letter-spacing="0.6">
+                  <textPath href="#b-arc-diamond" startOffset="50%" text-anchor="middle">POKER CLUB</textPath>
+                </text>
+                <text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="900" fill="#ea580c" font-family="Apple Symbols, Segoe UI Symbol, serif">♦</text>
+              </svg>
+            </div>
+            <span class="chip-suit-label">♦ ข้าวหลามตัด</span>
           </button>
-          <button type="button" class="avatar-btn" data-avatar="04">
-            <span class="avatar-num">04</span>
-            <span class="avatar-suit" style="color: var(--suit-black);">♣</span>
-          </button>
-          <button type="button" class="avatar-btn" data-avatar="05">
-            <span class="avatar-num">05</span>
-            <span class="avatar-suit" style="color: var(--suit-black);">♠</span>
-          </button>
-          <button type="button" class="avatar-btn" data-avatar="06">
-            <span class="avatar-num">06</span>
-            <span class="avatar-suit" style="color: var(--suit-red);">♥</span>
+
+          <!-- ♣ Club -->
+          <button type="button" class="vegas-chip-btn" data-avatar="club" title="ชิปดอกจิก (Club)">
+            <div class="vegas-chip-wrapper">
+              <svg viewBox="0 0 100 100" class="vegas-chip-svg">
+                <defs>
+                  <path id="t-arc-club" d="M 23,50 A 27,27 0 0,1 77,50" fill="none" />
+                  <path id="b-arc-club" d="M 77,50 A 27,27 0 0,1 23,50" fill="none" />
+                </defs>
+                <circle cx="50" cy="50" r="47" fill="#15803d" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#bbf7d0" stroke-width="10" stroke-dasharray="8 25" stroke-dashoffset="4"/>
+                <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="2 6"/>
+                <circle cx="50" cy="50" r="33" fill="#15803d" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+                <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+                <text font-family="Georgia, serif" font-size="4.6" font-weight="900" fill="#334155" letter-spacing="0.7">
+                  <textPath href="#t-arc-club" startOffset="50%" text-anchor="middle">LAS VEGAS</textPath>
+                </text>
+                <text font-family="Georgia, serif" font-size="3.8" font-weight="800" fill="#64748b" letter-spacing="0.6">
+                  <textPath href="#b-arc-club" startOffset="50%" text-anchor="middle">POKER CLUB</textPath>
+                </text>
+                <text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="900" fill="#14532d" font-family="Apple Symbols, Segoe UI Symbol, serif">♣</text>
+              </svg>
+            </div>
+            <span class="chip-suit-label">♣ ดอกจิก</span>
           </button>
         </div>
       </div>
@@ -136,10 +216,6 @@
 
       <button class="btn" id="btn-join">เข้าร่วมห้องเกม →</button>
       <div id="error-box" class="error-msg"></div>
-
-      <div style="text-align: center; margin-top: 24px;">
-        <a href="/host" style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none;">สำหรับอาจารย์ / ผู้ดำเนินรายการ (Host Dashboard) →</a>
-      </div>
     </div>
 
     <!-- 2. Lobby Wait Screen -->
@@ -164,13 +240,31 @@
       <div class="game-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span id="display-round">รอบที่ 1</span>
-          <div class="cylinder-hud" id="player-cylinder-hud" title="รังเพลิงลูกโม่ (Revolver Chambers)">
-            <span class="cylinder-chamber-dot active" id="p-ch-1"></span>
-            <span class="cylinder-chamber-dot" id="p-ch-2"></span>
-            <span class="cylinder-chamber-dot" id="p-ch-3"></span>
-            <span class="cylinder-chamber-dot" id="p-ch-4"></span>
-            <span class="cylinder-chamber-dot" id="p-ch-5"></span>
-            <span class="cylinder-chamber-dot" id="p-ch-6"></span>
+          <div class="casino-rounds-hud" id="player-chip-hud" title="รอบการแข่งขัน (Casino Round Chips)">
+            <div class="casino-chip active" id="p-chip-1" data-round="1">
+              <span class="chip-num">01</span>
+              <span class="chip-suit suit-black">♠</span>
+            </div>
+            <div class="casino-chip" id="p-chip-2" data-round="2">
+              <span class="chip-num">02</span>
+              <span class="chip-suit suit-red">♥</span>
+            </div>
+            <div class="casino-chip" id="p-chip-3" data-round="3">
+              <span class="chip-num">03</span>
+              <span class="chip-suit suit-red">♦</span>
+            </div>
+            <div class="casino-chip" id="p-chip-4" data-round="4">
+              <span class="chip-num">04</span>
+              <span class="chip-suit suit-black">♣</span>
+            </div>
+            <div class="casino-chip" id="p-chip-5" data-round="5">
+              <span class="chip-num">05</span>
+              <span class="chip-suit suit-black">♠</span>
+            </div>
+            <div class="casino-chip" id="p-chip-6" data-round="6">
+              <span class="chip-num">06</span>
+              <span class="chip-suit suit-red">♥</span>
+            </div>
           </div>
         </div>
         <span id="player-status-tag" style="color: var(--color-success);">● อยู่ในเกม</span>
@@ -254,9 +348,40 @@
         </div>
       </div>
 
-      <div id="result-bars-box" style="margin-bottom: 24px;"></div>
-      <div class="spinner"></div>
-      <p class="subtitle">รอ Host ดำเนินการรอบถัดไป...</p>
+      <div id="result-bars-box" style="margin-bottom: 18px;"></div>
+
+      <div id="player-waiting-host-box" style="text-align: center; margin-top: 14px;">
+        <div class="spinner"></div>
+        <p class="subtitle" id="player-waiting-text" style="margin-top: 8px;">รอเข้าสู่ช่วงนับถอยหลังข้อถัดไป...</p>
+      </div>
+    </div>
+
+    <!-- 4.5 Standalone Cooldown Screen (หน้าจอแยกเดี่ยวๆ นับถอยหลัง) -->
+    <div id="cooldown-view" class="countdown-stage" style="display: none;">
+      <div class="cd-stage-badge">
+        <span>⏳ PREPARE · เตรียมตัว</span>
+      </div>
+
+      <h2 style="font-size: 1.65rem; margin-top: 12px; margin-bottom: 6px; color: var(--text-main);">
+        คำถามรอบที่ <strong id="p-cd-next-round" style="color: var(--primary);">2</strong>
+      </h2>
+      <p class="subtitle" id="p-cd-status" style="font-size: 0.95rem; margin-bottom: 18px;">
+        คำถามกำลังจะมา วางนิ้วรอได้เลย!
+      </p>
+
+      <!-- Giant Central Glowing Countdown Circle on Mobile -->
+      <div class="countdown-hero-circle mobile">
+        <div class="countdown-hero-number mobile" id="p-cd-num">5</div>
+        <div class="countdown-hero-label">วินาที</div>
+      </div>
+
+      <div class="countdown-hero-track mobile">
+        <div class="countdown-hero-bar" id="p-cd-bar-fill"></div>
+      </div>
+
+      <div id="p-cd-pause-alert" style="display: none; margin-top: 20px; color: var(--gold); font-size: 0.9rem; font-weight: 700; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); border-radius: 8px; padding: 10px 16px;">
+        ⏸️ อาจารย์กำลังอธิบายสรุปคำตอบ...
+      </div>
     </div>
 
     <!-- 5. Game Over Screen -->
@@ -318,6 +443,73 @@
       initAudioContext();
       requestWakeLock();
     }, { once: true });
+
+    // Procedural Player BGM Engine
+    let isPlayerBgmEnabled = false;
+    let playerBgmInterval = null;
+    let playerBgmStep = 0;
+
+    function togglePlayerBGM() {
+      initAudioContext();
+      isPlayerBgmEnabled = !isPlayerBgmEnabled;
+      const btn = document.getElementById("btn-toggle-player-bgm");
+      if (btn) {
+        if (isPlayerBgmEnabled) {
+          btn.innerText = "🎵 เพลง: เปิด";
+          btn.classList.add("active");
+          startPlayerBGM();
+        } else {
+          btn.innerText = "🎵 เพลง: ปิด";
+          btn.classList.remove("active");
+          stopPlayerBGM();
+        }
+      }
+      playClickSound();
+    }
+
+    function startPlayerBGM() {
+      if (!isPlayerBgmEnabled || playerBgmInterval) return;
+      initAudioContext();
+      if (!pAudioCtx || !masterGain) return;
+
+      const chords = [
+        [220, 261.63, 329.63],
+        [174.61, 261.63, 329.63],
+        [130.81, 261.63, 329.63],
+        [196.00, 246.94, 293.66]
+      ];
+      playerBgmStep = 0;
+
+      function playStep() {
+        if (!isPlayerBgmEnabled || !pAudioCtx || !masterGain) return;
+        const currentChord = chords[playerBgmStep % chords.length];
+        const now = pAudioCtx.currentTime;
+
+        currentChord.forEach(f => {
+          const osc = pAudioCtx.createOscillator();
+          const gain = pAudioCtx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.035 * currentVolume, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        });
+        playerBgmStep++;
+      }
+
+      playStep();
+      playerBgmInterval = setInterval(playStep, 500);
+    }
+
+    function stopPlayerBGM() {
+      if (playerBgmInterval) {
+        clearInterval(playerBgmInterval);
+        playerBgmInterval = null;
+      }
+    }
 
     // เสียงคลิก / วางเดิมพันไพ่ (Card Snap)
     function playClickSound() {
@@ -480,14 +672,13 @@
        ========================================= */
     const socket = io();
 
-    let selectedAvatarIcon = "A♠ 🦉";
     let session = {
       roomId: null,
       roomCode: null,
       playerId: null,
       playerToken: null,
       playerName: null,
-      avatar: "A♠ 🦉",
+      avatar: "spade",
       currentRound: 0,
       maxRounds: 5,
       score: 0,
@@ -526,7 +717,7 @@
         playerId: null,
         playerToken: null,
         playerName: null,
-        avatar: "01",
+        avatar: "spade",
         currentRound: 0,
         maxRounds: 5,
         score: 0,
@@ -542,6 +733,8 @@
       document.getElementById("question-view").style.display = "none";
       document.getElementById("result-view").style.display = "none";
       document.getElementById("gameover-view").style.display = "none";
+      const cdView = document.getElementById("cooldown-view");
+      if (cdView) cdView.style.display = "none";
       document.getElementById("player-profile-bar").style.display = "none";
       
       document.getElementById("input-code").value = "";
@@ -580,8 +773,8 @@
         });
       });
 
-      // ปุ่มเลือก Avatar ชิปคาสิโน 01-06
-      document.querySelectorAll(".avatar-btn").forEach(function(btn) {
+      // ปุ่มเลือก Avatar ชิปคาสิโน Las Vegas (♠, ♥, ♦, ♣)
+      document.querySelectorAll(".vegas-chip-btn, .avatar-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
           selectAvatar(this.getAttribute("data-avatar"));
         });
@@ -598,11 +791,52 @@
       checkAutoResume();
     });
 
+    // ==========================================
+    // 🎰 Las Vegas Card Suit Chips Engine (สัญลักษณ์หน้าไพ่)
+    // ==========================================
+    const VEGAS_SUITS = {
+      spade: { id: "spade", symbol: "♠", name: "โพดำ", rim: "#1e293b", stripe: "#38bdf8", color: "#0f172a", badgeClass: "badge-spade" },
+      heart: { id: "heart", symbol: "♥", name: "โพแดง", rim: "#b91c1c", stripe: "#fecaca", color: "#dc2626", badgeClass: "badge-heart" },
+      diamond: { id: "diamond", symbol: "♦", name: "ข้าวหลามตัด", rim: "#c2410c", stripe: "#fed7aa", color: "#ea580c", badgeClass: "badge-diamond" },
+      club: { id: "club", symbol: "♣", name: "ดอกจิก", rim: "#15803d", stripe: "#bbf7d0", color: "#14532d", badgeClass: "badge-club" }
+    };
+
+    function normalizeAvatar(val) {
+      if (!val) return "spade";
+      const s = String(val).toLowerCase();
+      if (s === "heart" || s === "02" || s === "06" || s === "♥") return "heart";
+      if (s === "diamond" || s === "03" || s === "♦") return "diamond";
+      if (s === "club" || s === "04" || s === "♣") return "club";
+      return "spade";
+    }
+
+    function renderProfileAvatarChip(avatarKey) {
+      const c = VEGAS_SUITS[normalizeAvatar(avatarKey)];
+      const avDisplay = document.getElementById("my-avatar-display");
+      if (avDisplay) {
+        avDisplay.innerHTML = `
+          <svg viewBox="0 0 100 100" class="profile-chip-svg" style="width: 100%; height: 100%; border-radius: 50%;">
+            <circle cx="50" cy="50" r="47" fill="${c.rim}" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="${c.stripe}" stroke-width="10" stroke-dasharray="8 25" stroke-dashoffset="4"/>
+            <circle cx="50" cy="50" r="32" fill="${c.rim}"/>
+            <circle cx="50" cy="50" r="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+            <text x="50" y="52" text-anchor="middle" dominant-baseline="central" font-size="28" font-weight="900" fill="${c.color}" font-family="Apple Symbols, Segoe UI Symbol, serif">${c.symbol}</text>
+          </svg>
+        `;
+        avDisplay.title = `ชิปประจำตัวของคุณ: ${c.name} (${c.symbol})`;
+      }
+    }
+
     function checkAutoResume() {
       try {
         const saved = sessionStorage.getItem("pim_player_session");
         if (saved) {
           const parsed = JSON.parse(saved);
+          if (parsed.avatar) {
+            session.avatar = normalizeAvatar(parsed.avatar);
+            selectedAvatar = session.avatar;
+            selectAvatar(session.avatar);
+          }
           if (parsed.roomId && parsed.playerId && parsed.playerToken) {
             showReconnectHud("กำลังกู้คืนห้องเดิมของคุณ...");
             socket.emit("player:resume-session", {
@@ -622,14 +856,19 @@
       } catch(e) {}
     }
 
-    let selectedAvatar = "01";
+    let selectedAvatar = "spade";
     function selectAvatar(icon) {
       playClickSound();
-      selectedAvatar = icon;
-      session.avatar = icon;
-      document.querySelectorAll(".avatar-btn").forEach(function(b) {
+      const norm = normalizeAvatar(icon);
+      selectedAvatar = norm;
+      session.avatar = norm;
+
+      document.querySelectorAll(".vegas-chip-btn, .avatar-btn").forEach(function(b) {
         b.classList.remove("selected");
-        if (b.getAttribute("data-avatar") === icon) b.classList.add("selected");
+        const chipData = normalizeAvatar(b.getAttribute("data-avatar"));
+        if (chipData === norm) {
+          b.classList.add("selected");
+        }
       });
       vibrateDevice(20);
     }
@@ -639,15 +878,14 @@
       session.roomCode = res.roomCode;
       session.playerId = res.playerId;
       session.playerName = res.playerName;
-      session.avatar = res.avatar || session.avatar || "01";
+      session.avatar = normalizeAvatar(res.avatar || session.avatar || "spade");
       session.isAlive = res.isAlive;
       session.score = res.score;
       session.audienceScore = res.audienceScore;
       session.currentRound = res.currentRound;
       session.maxRounds = res.maxRounds;
 
-      const avDisplay = document.getElementById("my-avatar-display");
-      if (avDisplay) avDisplay.innerText = session.avatar;
+      renderProfileAvatarChip(session.avatar);
 
       document.getElementById("my-name-display").innerText = session.playerName;
       document.getElementById("my-live-score").innerText = Number(session.score).toLocaleString();
@@ -721,13 +959,12 @@
           session.playerId = res.playerId;
           session.playerToken = res.playerToken;
           session.playerName = res.playerName;
-          session.avatar = selectedAvatar;
+          session.avatar = normalizeAvatar(res.avatar || selectedAvatar);
           session.isAlive = true;
           session.score = 0;
           session.audienceScore = 0;
 
-          const avDisplay = document.getElementById("my-avatar-display");
-          if (avDisplay) avDisplay.innerText = session.avatar;
+          renderProfileAvatarChip(session.avatar);
 
           try {
             sessionStorage.setItem("pim_player_session", JSON.stringify({
@@ -735,7 +972,8 @@
               roomCode: res.roomCode,
               playerId: res.playerId,
               playerToken: res.playerToken,
-              playerName: res.playerName
+              playerName: res.playerName,
+              avatar: session.avatar
             }));
           } catch(e) {}
 
@@ -760,7 +998,8 @@
       const tagsBox = document.getElementById("player-tags");
       if (tagsBox && Array.isArray(players)) {
         tagsBox.innerHTML = players.map(function(p) {
-          return '<span class="player-tag">' + escapeHtml(p.name) + '</span>';
+          const c = VEGAS_SUITS[normalizeAvatar(p.avatar)];
+          return '<span class="player-tag"><span class="vegas-chip-badge ' + c.badgeClass + '">' + c.symbol + '</span> ' + escapeHtml(p.name) + '</span>';
         }).join("");
       }
     }
@@ -849,6 +1088,8 @@
       document.getElementById("question-view").style.display = "none";
       document.getElementById("result-view").style.display = "none";
       document.getElementById("gameover-view").style.display = "none";
+      const restartCd = document.getElementById("cooldown-view");
+      if (restartCd) restartCd.style.display = "none";
       document.getElementById("lobby-view").style.display = "block";
 
       if (data.playerCount !== undefined) {
@@ -865,19 +1106,96 @@
       }
     });
 
+    // ==========================================
+    // ⏳ Next-Round Cooldown Listener (หน้าจอแยกเดี่ยวๆ นับถอยหลัง)
+    // ==========================================
+    let pCooldownTotal = 5;
+
+    socket.on("game:cooldown-start", function(data) {
+      pCooldownTotal = data.totalSeconds || 5;
+      const cdView = document.getElementById("cooldown-view");
+      const nextRoundSpan = document.getElementById("p-cd-next-round");
+      const numSpan = document.getElementById("p-cd-num");
+      const barFill = document.getElementById("p-cd-bar-fill");
+      const statusEl = document.getElementById("p-cd-status");
+      const pauseAlert = document.getElementById("p-cd-pause-alert");
+
+      // ซ่อนหน้าอื่นทั้งหมด สลับเข้าสู่หน้าคูลดาวน์นับถอยหลังแยกเดี่ยวๆ เต็มจอ!
+      document.getElementById("result-view").style.display = "none";
+      document.getElementById("question-view").style.display = "none";
+      document.getElementById("lobby-view").style.display = "none";
+      document.getElementById("gameover-view").style.display = "none";
+
+      if (cdView) {
+        cdView.style.display = "flex";
+        if (nextRoundSpan) nextRoundSpan.innerText = data.nextRound || (session.currentRound + 1);
+        if (numSpan) numSpan.innerText = data.remainingSeconds || pCooldownTotal;
+        if (barFill) barFill.style.width = "100%";
+        if (statusEl) statusEl.innerText = "คำถามกำลังจะมา วางนิ้วรอได้เลย!";
+        if (pauseAlert) pauseAlert.style.display = "none";
+        vibrateDevice(40);
+      }
+    });
+
+    socket.on("game:cooldown-tick", function(data) {
+      const cdView = document.getElementById("cooldown-view");
+      const numSpan = document.getElementById("p-cd-num");
+      const barFill = document.getElementById("p-cd-bar-fill");
+      if (cdView && cdView.style.display !== "none") {
+        const sec = data.remainingSeconds;
+        if (numSpan) numSpan.innerText = sec;
+        if (barFill) {
+          const pct = Math.max(0, (sec / pCooldownTotal) * 100);
+          barFill.style.width = pct + "%";
+        }
+        if (sec <= 3 && sec > 0) {
+          vibrateDevice(50);
+        }
+      }
+    });
+
+    socket.on("game:cooldown-pause", function(data) {
+      const pauseAlert = document.getElementById("p-cd-pause-alert");
+      const statusEl = document.getElementById("p-cd-status");
+      if (pauseAlert) {
+        pauseAlert.style.display = data.paused ? "block" : "none";
+      }
+      if (statusEl) {
+        statusEl.innerText = data.paused 
+          ? "อาจารย์กำลังอธิบายเนื้อหา / พักช่วง" 
+          : "คำถามกำลังจะมา วางนิ้วรอได้เลย!";
+      }
+    });
+
+    socket.on("game:cooldown-cancel", function() {
+      const cdView = document.getElementById("cooldown-view");
+      if (cdView) cdView.style.display = "none";
+      document.getElementById("result-view").style.display = "block";
+    });
+
     /* =========================================
        5. Screen Transitions & UI Logic
        ========================================= */
     function updateCylinderHUD(round, maxRounds) {
       const activeIdx = ((round - 1) % 6) + 1;
       for (let i = 1; i <= 6; i++) {
+        const chip = document.getElementById("p-chip-" + i);
+        if (chip) {
+          chip.className = "casino-chip";
+          if (i < activeIdx) {
+            chip.classList.add("spent");
+          } else if (i === activeIdx) {
+            chip.classList.add("active");
+          }
+        }
         const dot = document.getElementById("p-ch-" + i);
-        if (!dot) continue;
-        dot.className = "cylinder-chamber-dot";
-        if (i < activeIdx) {
-          dot.classList.add("spent");
-        } else if (i === activeIdx) {
-          dot.classList.add("active");
+        if (dot) {
+          dot.className = "cylinder-chamber-dot";
+          if (i < activeIdx) {
+            dot.classList.add("spent");
+          } else if (i === activeIdx) {
+            dot.classList.add("active");
+          }
         }
       }
     }
@@ -887,6 +1205,9 @@
       document.getElementById("result-view").style.display = "none";
       document.getElementById("gameover-view").style.display = "none";
       document.getElementById("question-view").style.display = "block";
+
+      const cdView = document.getElementById("cooldown-view");
+      if (cdView) cdView.style.display = "none";
 
       const total = state.maxRounds || session.maxRounds || 5;
       document.getElementById("display-round").innerText = "รอบที่ " + state.round + " / " + total;
@@ -997,6 +1318,11 @@
       document.getElementById("result-view").style.display = "block";
       document.getElementById("result-title").innerText = "ผลคะแนนรอบที่ " + result.round;
 
+      const cdView = document.getElementById("cooldown-view");
+      if (cdView) cdView.style.display = "none";
+      const waitBox = document.getElementById("player-waiting-host-box");
+      if (waitBox) waitBox.style.display = "block";
+
       const banner = document.getElementById("player-status-banner");
       const statusTitle = document.getElementById("status-title");
       const statusDesc = document.getElementById("status-desc");
@@ -1086,9 +1412,10 @@
           const isMe = (p.id === session.playerId);
           const meTag = isMe ? ' <span style="color: var(--primary); font-weight: bold;">(ฉัน)</span>' : '';
 
+          const c = VEGAS_SUITS[normalizeAvatar(p.avatar)];
           rows += '<tr class="' + rankClass + '" style="' + (isMe ? 'background: rgba(31, 111, 235, 0.1);' : '') + '">' +
                     '<td>' + rankBadge + '</td>' +
-                    '<td>' + escapeHtml(p.name) + meTag + '</td>' +
+                    '<td><span class="vegas-chip-badge ' + c.badgeClass + '">' + c.symbol + '</span> ' + escapeHtml(p.name) + meTag + '</td>' +
                     '<td style="text-align: right;">' + Number(p.score).toLocaleString() + ' แต้ม</td>' +
                   '</tr>';
         });
