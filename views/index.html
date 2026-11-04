@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>คิดเหมือนรอด - สำหรับผู้เล่น</title>
-  <link rel="stylesheet" href="/css/style.css?v=2.9">
+  <link rel="stylesheet" href="/css/style.css?v=3.1">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* สไตล์เพิ่มเติมสำหรับแถบควบคุมเสียง */
@@ -318,13 +318,13 @@
         </div>
       </div>
 
-      <!-- แถบเวลานับถอยหลังดูหน้านี้ 2 วินาที -->
+      <!-- แถบเวลานับถอยหลังดูหน้านี้ 4 วินาที -->
       <div class="result-timer-track">
         <div class="result-timer-bar" id="result-timer-fill"></div>
       </div>
       <div class="result-waiting-footer">
         <div class="pulse-indicator"></div>
-        <span id="result-waiting-text">กำลังแสดงผลสรุป: <strong id="result-time-sec">2</strong>s</span>
+        <span id="result-waiting-text">กำลังแสดงผลสรุป: <strong id="result-time-sec">4</strong>s</span>
       </div>
 
       <!-- Hidden compatibility elements to ensure zero JS errors -->
@@ -1141,7 +1141,7 @@
     // ==========================================
     let pCooldownTotal = 5;
     let resultScreenShownAt = 0;
-    const MIN_RESULT_DISPLAY_MS = 2000; // เวลาดูหน้าสรุปผลประจำรอบประมาณ 2 วินาที
+    const MIN_RESULT_DISPLAY_MS = 4000; // เวลาดูหน้าสรุปผลประจำรอบประมาณ 4 วินาที
     let pendingResultTransition = null;
     let resultTimerInterval = null;
 
@@ -1151,7 +1151,7 @@
       const isResultViewActive = (resView && resView.style.display !== "none");
 
       if (isResultViewActive && elapsed < MIN_RESULT_DISPLAY_MS) {
-        // ยังแสดงผลสรุปไม่ครบ 2 วินาที ให้ค้างหน้านี้ไว้จนครบ 2 วินาทีก่อน
+        // ยังแสดงผลสรุปไม่ครบ 4 วินาที ให้ค้างหน้านี้ไว้จนครบ 4 วินาทีก่อน
         pendingResultTransition = callback;
       } else {
         callback();
@@ -1418,8 +1418,14 @@
         setTimeout(playChipSound, 150);
         if (survCard) survCard.className = "survival-status-card survived";
         if (survIcon) survIcon.innerText = "⚪";
-        if (survTitle) survTitle.innerText = "⚪ คุณรอดชีวิต!";
-        if (survDesc) survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ตรงกับเสียงส่วนใหญ่ (+1,000 แต้ม)";
+        if (survTitle) survTitle.innerText = "⚪ CLICK! รังเพลิงว่าง – คุณรอดชีวิต!";
+        let bonusText = "";
+        if (myStats.speedBonus) {
+          bonusText = " + โบนัสความเร็ว " + myStats.speedBonus + " แต้ม";
+        }
+        if (survDesc) {
+          survDesc.innerText = "คุณเลือกไพ่ข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ตรงกับเสียงส่วนใหญ่ (+1,000 แต้ม" + bonusText + ")";
+        }
       } else {
         // ผู้เล่นที่ตกรอบ (Eliminated)
         playGunshotSound();
@@ -1429,9 +1435,9 @@
         if (session.selectedChoice) {
           // เพิ่งตกรอบในรอบนี้จากการตอบผิด
           if (survIcon) survIcon.innerText = "💥";
-          if (survTitle) survTitle.innerText = "💥 คุณตกรอบแล้ว! (Eliminated)";
+          if (survTitle) survTitle.innerText = "💥 BANG! รังเพลิงลั่น – คุณตกรอบ!";
           if (survDesc) {
-            survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ไม่ใช่คำตอบส่วนใหญ่ → ระบบจะล็อกคำตอบในรอบถัดไป";
+            survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ไม่ใช่คำตอบส่วนใหญ่ → ระบบล็อกคำตอบในรอบถัดไป";
           }
         } else {
           // ตกรอบอยู่แล้วตั้งแต่รอบก่อน
@@ -1479,7 +1485,7 @@
         document.getElementById("my-live-score").innerText = Number(myStats.totalScore).toLocaleString();
       }
 
-      // 5. นับเวลาดูหน้าสรุปผลประจำรอบประมาณ 2 วินาที
+      // 5. นับเวลาดูหน้าสรุปผลประจำรอบประมาณ 4 วินาที
       resultScreenShownAt = Date.now();
       pendingResultTransition = null;
       clearInterval(resultTimerInterval);
@@ -1488,7 +1494,7 @@
       const timeSecEl = document.getElementById("result-time-sec");
       const waitTextEl = document.getElementById("result-waiting-text");
       if (timerFill) timerFill.style.width = "100%";
-      if (timeSecEl) timeSecEl.innerText = "2.0";
+      if (timeSecEl) timeSecEl.innerText = "4.0";
 
       resultTimerInterval = setInterval(function() {
         const elapsed = Date.now() - resultScreenShownAt;

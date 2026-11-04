@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>คิดเหมือนรอด - Host Presentation Dashboard</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=3.1">
     <script src="/socket.io/socket.io.js"></script>
     <style>
       .container {
@@ -228,7 +228,35 @@
           <span id="host-timer-text" style="color: var(--primary); font-size: 1.5rem; font-weight: 800;">--:--</span>
         </div>
 
-        <div style="background: var(--color-paper); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
+        <!-- Live Player Status Telemetry (คนเหลือเท่าไหร่ / ตกรอบ / ทั้งหมด) -->
+        <div class="host-telemetry-grid">
+          <div class="telemetry-card card-alive">
+            <span class="telemetry-label">🟢 รอดชีวิต (เหลือ)</span>
+            <div class="telemetry-val-box">
+              <strong id="telemetry-alive-val">0</strong> <span class="telemetry-unit">คน</span>
+            </div>
+          </div>
+          <div class="telemetry-card card-eliminated">
+            <span class="telemetry-label">💀 ตกรอบ</span>
+            <div class="telemetry-val-box">
+              <strong id="telemetry-eliminated-val">0</strong> <span class="telemetry-unit">คน</span>
+            </div>
+          </div>
+          <div class="telemetry-card card-total">
+            <span class="telemetry-label">👥 ผู้เล่นทั้งหมด</span>
+            <div class="telemetry-val-box">
+              <strong id="telemetry-total-val">0</strong> <span class="telemetry-unit">คน</span>
+            </div>
+          </div>
+          <div class="telemetry-card card-answering" id="telemetry-card-answered" style="display: none;">
+            <span class="telemetry-label">📝 ตอบแล้ว</span>
+            <div class="telemetry-val-box">
+              <strong id="telemetry-answered-val">0</strong> <span class="telemetry-unit">/ <span id="telemetry-alive-denom">0</span> คน</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: var(--color-paper); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: none; justify-content: space-between; align-items: center; font-size: 0.95rem;">
           <span id="host-stat-box">
             <span id="host-stat-label">ผู้เล่นในห้อง:</span> 
             <strong id="host-answered-stat" style="color: var(--primary); font-size: 1.15rem;">0</strong>
@@ -239,43 +267,64 @@
           <span id="host-early-hint" style="color: var(--gold); display: none; font-weight: 600;">ตอบครบแล้ว · กำลังสรุปผล</span>
         </div>
 
-        <div id="host-question-preview" class="question-card" style="display: none; font-size: 1.25rem; font-weight: 700; line-height: 1.5;">
-          คำถามจะแสดงที่นี่
-        </div>
+        <!-- Theater Container (รองรับการซูมคำถามและตัวเลือกเต็มจอสำหรับโปรเจกเตอร์) -->
+        <div id="host-theater-container" class="host-theater-container">
+          <div class="theater-controls-bar">
+            <div class="theater-info-left">
+              <span class="theater-round-badge" id="theater-round-badge">รอบที่ 1</span>
+              <span class="theater-alive-pill" id="theater-alive-pill">🟢 รอดชีวิต 0 คน</span>
+              <span class="theater-answered-pill" id="theater-answered-pill" style="display: none;">ตอบแล้ว 0 / 0</span>
+            </div>
+            <div class="theater-timer-center" id="theater-timer-clock">25s</div>
+            <div class="theater-actions-right">
+              <label class="auto-zoom-checkbox-label" title="เมื่ออาจารย์กดเริ่มรอบ ระบบจะขยายคำถามเต็มจอให้อัตโนมัติ">
+                <input type="checkbox" id="check-auto-zoom" checked onchange="saveAutoZoomPreference()">
+                <span>ซูมเต็มจออัตโนมัติเมื่อเริ่ม</span>
+              </label>
+              <button type="button" class="btn-theater-zoom" id="btn-toggle-zoom" onclick="toggleQuestionZoom()" title="ซูมคำถามและตัวเลือกเต็มจอสำหรับโปรเจกเตอร์">
+                🔍 ขยายคำถามเต็มจอ
+              </button>
+            </div>
+          </div>
 
-        <!-- 4 Authentic Playing Cards Preview for Classroom Display -->
-        <div id="host-options-preview" class="choices-grid" style="display: none; margin-bottom: 16px;">
-          <div class="choice-btn a" style="cursor: default;">
-            <div class="card-pip top-left"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
-            <div class="card-body">
-              <div class="card-watermark">♠</div>
-              <span class="card-text" id="host-opt-a">-</span>
-            </div>
-            <div class="card-pip bottom-right"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+          <div id="host-question-preview" class="question-card" style="display: none; font-size: 1.25rem; font-weight: 700; line-height: 1.5;">
+            คำถามจะแสดงที่นี่
           </div>
-          <div class="choice-btn b" style="cursor: default;">
-            <div class="card-pip top-left"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
-            <div class="card-body">
-              <div class="card-watermark">♥</div>
-              <span class="card-text" id="host-opt-b">-</span>
+
+          <!-- 4 Authentic Playing Cards Preview for Classroom Display -->
+          <div id="host-options-preview" class="choices-grid" style="display: none; margin-bottom: 16px;">
+            <div class="choice-btn a" style="cursor: default;">
+              <div class="card-pip top-left"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
+              <div class="card-body">
+                <div class="card-watermark">♠</div>
+                <span class="card-text" id="host-opt-a">-</span>
+              </div>
+              <div class="card-pip bottom-right"><span class="pip-rank">A</span><span class="pip-suit">♠</span></div>
             </div>
-            <div class="card-pip bottom-right"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
-          </div>
-          <div class="choice-btn c" style="cursor: default;">
-            <div class="card-pip top-left"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
-            <div class="card-body">
-              <div class="card-watermark">♦</div>
-              <span class="card-text" id="host-opt-c">-</span>
+            <div class="choice-btn b" style="cursor: default;">
+              <div class="card-pip top-left"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
+              <div class="card-body">
+                <div class="card-watermark">♥</div>
+                <span class="card-text" id="host-opt-b">-</span>
+              </div>
+              <div class="card-pip bottom-right"><span class="pip-rank">B</span><span class="pip-suit">♥</span></div>
             </div>
-            <div class="card-pip bottom-right"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
-          </div>
-          <div class="choice-btn d" style="cursor: default;">
-            <div class="card-pip top-left"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
-            <div class="card-body">
-              <div class="card-watermark">♣</div>
-              <span class="card-text" id="host-opt-d">-</span>
+            <div class="choice-btn c" style="cursor: default;">
+              <div class="card-pip top-left"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
+              <div class="card-body">
+                <div class="card-watermark">♦</div>
+                <span class="card-text" id="host-opt-c">-</span>
+              </div>
+              <div class="card-pip bottom-right"><span class="pip-rank">C</span><span class="pip-suit">♦</span></div>
             </div>
-            <div class="card-pip bottom-right"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+            <div class="choice-btn d" style="cursor: default;">
+              <div class="card-pip top-left"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+              <div class="card-body">
+                <div class="card-watermark">♣</div>
+                <span class="card-text" id="host-opt-d">-</span>
+              </div>
+              <div class="card-pip bottom-right"><span class="pip-rank">D</span><span class="pip-suit">♣</span></div>
+            </div>
           </div>
         </div>
 
@@ -903,6 +952,106 @@
       } catch(e) {}
 
       // ==========================================
+      // 🔍 Host Fullscreen Theater Zoom Engine (ขยายคำถามเต็มจอสำหรับโปรเจกเตอร์)
+      // ==========================================
+      function toggleQuestionZoom() {
+        const container = document.getElementById("host-theater-container");
+        if (!container) return;
+        const isZoomed = container.classList.toggle("is-fullscreen-theater");
+        const btn = document.getElementById("btn-toggle-zoom");
+        if (btn) {
+          btn.innerHTML = isZoomed ? "✕ ย่อหน้าจอปกติ (ESC)" : "🔍 ขยายคำถามเต็มจอ";
+        }
+      }
+
+      function openQuestionZoom() {
+        const container = document.getElementById("host-theater-container");
+        if (!container) return;
+        container.classList.add("is-fullscreen-theater");
+        const btn = document.getElementById("btn-toggle-zoom");
+        if (btn) btn.innerHTML = "✕ ย่อหน้าจอปกติ (ESC)";
+      }
+
+      function closeQuestionZoom() {
+        const container = document.getElementById("host-theater-container");
+        if (!container) return;
+        container.classList.remove("is-fullscreen-theater");
+        const btn = document.getElementById("btn-toggle-zoom");
+        if (btn) btn.innerHTML = "🔍 ขยายคำถามเต็มจอ";
+      }
+
+      function isAutoZoomEnabled() {
+        const chk = document.getElementById("check-auto-zoom");
+        return chk ? chk.checked : true;
+      }
+
+      function saveAutoZoomPreference() {
+        try {
+          const chk = document.getElementById("check-auto-zoom");
+          localStorage.setItem("pim_host_auto_zoom", chk && chk.checked ? "1" : "0");
+        } catch(e) {}
+      }
+
+      try {
+        if (localStorage.getItem("pim_host_auto_zoom") === "0") {
+          const chk = document.getElementById("check-auto-zoom");
+          if (chk) chk.checked = false;
+        }
+      } catch(e) {}
+
+      // กด ESC เพื่อปิดโหมดซูมเต็มจอ
+      window.addEventListener("keydown", function(e) {
+        if (e.key === "Escape" || e.keyCode === 27) {
+          closeQuestionZoom();
+        }
+      });
+
+      // ==========================================
+      // 🟢 Live Player Telemetry Engine (คนเหลือเท่าไหร่ / ตกรอบ / ทั้งหมด)
+      // ==========================================
+      let hostCurrentAliveCount = 0;
+      let hostCurrentTotalCount = 0;
+      let hostCurrentAnsweredCount = 0;
+
+      function updateHostTelemetry(alive, total, answered) {
+        if (alive !== undefined) hostCurrentAliveCount = alive;
+        if (total !== undefined) hostCurrentTotalCount = total;
+        if (answered !== undefined) hostCurrentAnsweredCount = answered;
+
+        const elAlive = document.getElementById("telemetry-alive-val");
+        const elElim = document.getElementById("telemetry-eliminated-val");
+        const elTotal = document.getElementById("telemetry-total-val");
+        const elAns = document.getElementById("telemetry-answered-val");
+        const elDenom = document.getElementById("telemetry-alive-denom");
+        const cardAns = document.getElementById("telemetry-card-answered");
+        const pillAlive = document.getElementById("theater-alive-pill");
+        const pillAns = document.getElementById("theater-answered-pill");
+        const roundBadge = document.getElementById("theater-round-badge");
+
+        const eliminated = Math.max(0, hostCurrentTotalCount - hostCurrentAliveCount);
+
+        if (elAlive) elAlive.innerText = hostCurrentAliveCount;
+        if (elElim) elElim.innerText = eliminated;
+        if (elTotal) elTotal.innerText = hostCurrentTotalCount;
+        if (elAns) elAns.innerText = hostCurrentAnsweredCount;
+        if (elDenom) elDenom.innerText = hostCurrentAliveCount;
+        if (pillAlive) pillAlive.innerText = `🟢 รอดชีวิต ${hostCurrentAliveCount} คน`;
+        if (pillAns) {
+          pillAns.style.display = (hostSession.currentStatus === "ANSWERING") ? "inline-block" : "none";
+          pillAns.innerText = `ตอบแล้ว ${hostCurrentAnsweredCount} / ${hostCurrentAliveCount}`;
+        }
+        if (roundBadge) {
+          roundBadge.innerText = hostSession.currentRound > 0 
+            ? `รอบที่ ${hostSession.currentRound} / ${hostSession.maxRounds}` 
+            : "LOBBY";
+        }
+
+        if (cardAns) {
+          cardAns.style.display = (hostSession.currentStatus === "ANSWERING") ? "flex" : "none";
+        }
+      }
+
+      // ==========================================
       // 2. Real-Time Socket.io Connection
       // ==========================================
       const socket = io();
@@ -1153,6 +1302,9 @@
         const count = data.playerCount || 0;
         document.getElementById("host-player-count").innerText = count;
 
+        const aliveCount = data.players ? data.players.filter(p => p.alive).length : 0;
+        updateHostTelemetry(aliveCount, count, undefined);
+
         if (hostSession.currentStatus === "LOBBY") {
           document.getElementById("host-stat-label").innerText = "ผู้เล่นในห้อง:";
           document.getElementById("host-answered-stat").innerText = count;
@@ -1227,6 +1379,11 @@
         updateHostCylinder(data.round, hostSession.maxRounds);
         SFX.cylinderSpin();
 
+        updateHostTelemetry(data.totalAlive, hostCurrentTotalCount, 0);
+        if (isAutoZoomEnabled()) {
+          openQuestionZoom();
+        }
+
         const actBtn = document.getElementById("btn-action");
         const skipBtn = document.getElementById("btn-skip-round");
         skipBtn.style.display = "inline-block";
@@ -1272,6 +1429,8 @@
       socket.on("game:timer-tick", function(data) {
         const sec = data.remainingSeconds;
         document.getElementById("host-timer-text").innerText = `${sec}s`;
+        const theaterClock = document.getElementById("theater-timer-clock");
+        if (theaterClock) theaterClock.innerText = `${sec}s`;
 
         if (sec <= 10 && sec > 0) {
           document.getElementById("host-timer-text").style.color = "var(--color-danger)";
@@ -1287,6 +1446,7 @@
       socket.on("game:answer-count-update", function(data) {
         document.getElementById("host-answered-stat").innerText = data.answeredCount;
         document.getElementById("host-alive-stat").innerText = data.totalAlive;
+        updateHostTelemetry(data.totalAlive, hostCurrentTotalCount, data.answeredCount);
 
         if (data.answeredCount >= data.totalAlive && data.totalAlive > 0) {
           document.getElementById("host-early-hint").style.display = "inline";
@@ -1309,6 +1469,7 @@
           hostSession.currentStatus = "GAME_OVER";
           SFX.fanfare();
           triggerConfetti();
+          updateHostTelemetry(res.aliveCount, res.totalPlayers, 0);
 
           document.getElementById("host-round-text").innerText = `จบการแข่งขัน (${res.maxRounds} รอบ)`;
           document.getElementById("host-timer-text").innerText = "END";
@@ -1327,6 +1488,7 @@
           renderHostGameOver(res, res.leaderboard);
         } else {
           hostSession.currentStatus = "RESULT";
+          updateHostTelemetry(res.aliveCount, res.totalPlayers, 0);
           
           if (res.eliminatedCount > 0) {
             SFX.gunshot();
@@ -1347,9 +1509,9 @@
 
           actBtn.innerText = `เริ่มรอบที่ ${res.round + 1} (Next Round)`;
           actBtn.style.background = "var(--primary)";
-          // ให้เวลาดูหน้าสรุปผลประจำรอบประมาณ 2 วินาที
+          // ให้เวลาดูหน้าสรุปผลประจำรอบประมาณ 4 วินาที
           actBtn.disabled = true;
-          let viewSec = 2;
+          let viewSec = 4;
           actBtn.innerText = `แสดงผลสรุป (${viewSec}s)...`;
           const resultCountdown = setInterval(() => {
             viewSec--;
@@ -1364,12 +1526,12 @@
 
           renderHostResult(res);
 
-          // เริ่มคูลดาวน์เปลี่ยนข้อหลังให้เวลาดูหน้าสรุปผล 2 วินาที (หากเปิด Autopilot)
+          // เริ่มคูลดาวน์เปลี่ยนข้อหลังให้เวลาดูหน้าสรุปผล 4 วินาที (หากเปิด Autopilot)
           setTimeout(() => {
             if (hostSession.currentStatus === "RESULT" && !res.isGameOver && isAutoPilotEnabled()) {
               startNextRoundCooldown();
             }
-          }, 2000);
+          }, 4000);
         }
       });
 
@@ -1378,6 +1540,8 @@
         hostSession.currentStatus = "LOBBY";
         hostSession.currentRound = 0;
         cancelCooldown();
+        closeQuestionZoom();
+        updateHostTelemetry(data.playerCount, data.playerCount, 0);
         BGM.setMode("LOBBY");
         document.getElementById("host-round-text").innerText = `เตรียมพร้อม (แข่งทั้งหมด ${hostSession.maxRounds} รอบ)`;
         document.getElementById("host-timer-text").innerText = "--:--";
