@@ -2714,6 +2714,242 @@ body.theater-mode .casino-chip .chip-suit {
   opacity: 0.08 !important;
 }
 
+/* =================================================================
+   13. COOLDOWN SCREEN WITH LIVE RANKING TABLE & COMPACT TIMER
+   ================================================================= */
+.cooldown-stage {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 4px 0 !important;
+  box-sizing: border-box !important;
+}
+
+.cooldown-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.cooldown-round-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cooldown-badge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 99px;
+  padding: 2px 8px;
+  letter-spacing: 0.04em;
+}
+
+.cooldown-next-title {
+  font-size: 0.92rem;
+  font-weight: 750;
+  color: var(--color-ink);
+}
+
+.cooldown-next-title strong {
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.cooldown-timer-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(0, 0, 0, 0.6) 100%);
+  border: 1.5px solid var(--gold);
+  border-radius: 99px;
+  padding: 3px 12px;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+}
+
+.cd-timer-clock-icon {
+  font-size: 0.88rem;
+}
+
+.cooldown-timer-compact strong {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.cd-timer-unit {
+  font-size: 0.75rem;
+  color: var(--color-ink-2);
+  font-weight: 700;
+}
+
+/* Compact Progress Track */
+.countdown-compact-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.countdown-compact-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #10b981, var(--gold));
+  border-radius: 99px;
+  transition: width 0.1s linear;
+}
+
+.cooldown-subtitle-compact {
+  font-size: 0.8rem;
+  color: var(--color-ink-2);
+  margin: 0 0 6px 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cooldown-pause-alert {
+  margin-bottom: 6px;
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+/* Live Leaderboard Card */
+.cooldown-leaderboard-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(212, 175, 55, 0.35);
+  border-radius: 14px;
+  padding: 8px 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(212, 175, 55, 0.05);
+}
+
+.cooldown-leaderboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.cooldown-my-rank {
+  font-size: 0.76rem;
+  font-weight: 750;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+.cooldown-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cooldown-leaderboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-size: 0.82rem;
+}
+
+.cooldown-leaderboard-table th {
+  color: var(--color-ink-2);
+  font-weight: 700;
+  padding: 3px 6px;
+  text-align: left;
+  font-size: 0.74rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cooldown-leaderboard-table td {
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.cooldown-leaderboard-table tr td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.cooldown-leaderboard-table tr td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.cooldown-leaderboard-table tr.is-me-row td {
+  background: rgba(212, 175, 55, 0.18) !important;
+  border-top: 1px solid rgba(212, 175, 55, 0.4);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  color: #fff;
+  font-weight: 750;
+}
+
+.cd-rank-col {
+  font-weight: 850 !important;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.cd-player-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cd-player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.cd-me-badge {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.cd-score-col {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

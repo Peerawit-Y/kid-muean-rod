@@ -504,10 +504,21 @@ io.on("connection", (socket) => {
   socket.on("host:cooldown-start", (data) => {
     const room = rooms.get(data.roomId);
     if (!room || room.hostToken !== data.hostToken) return;
+
+    const leaderboard = Object.values(room.players)
+      .sort((a, b) => b.score - a.score)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar || "spade",
+        score: p.score
+      }));
+
     io.to(room.id).emit("game:cooldown-start", {
       nextRound: data.nextRound,
       totalSeconds: data.totalSeconds,
-      remainingSeconds: data.remainingSeconds || data.totalSeconds
+      remainingSeconds: data.remainingSeconds || data.totalSeconds,
+      leaderboard: leaderboard
     });
   });
 

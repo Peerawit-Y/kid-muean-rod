@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>คิดเหมือนรอด - สำหรับผู้เล่น</title>
-  <link rel="stylesheet" href="/css/style.css?v=3.1">
+  <link rel="stylesheet" href="/css/style.css?v=3.2">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* สไตล์เพิ่มเติมสำหรับแถบควบคุมเสียง */
@@ -342,31 +342,53 @@
       </div>
     </div>
 
-    <!-- 4.5 Standalone Cooldown Screen (หน้าจอแยกเดี่ยวๆ นับถอยหลัง) -->
-    <div id="cooldown-view" class="countdown-stage" style="display: none;">
-      <div class="cd-stage-badge">
-        <span>⏳ PREPARE · เตรียมตัว</span>
+    <!-- 4.5 Standalone Cooldown Screen (หน้ารอคำถาม: โชว์ตารางคะแนนสด + เวลานับถอยหลังกะทัดรัด) -->
+    <div id="cooldown-view" class="cooldown-stage" style="display: none;">
+      <!-- แถบด้านบน: ป้ายรอบถัดไป + ตัวเลขนับถอยหลังขนาดกะทัดรัด -->
+      <div class="cooldown-top-bar">
+        <div class="cooldown-round-info">
+          <span class="cooldown-badge">⏳ เตรียมตัว</span>
+          <span class="cooldown-next-title">รอบที่ <strong id="p-cd-next-round">2</strong></span>
+        </div>
+        <div class="cooldown-timer-compact">
+          <span class="cd-timer-clock-icon">⏱️</span>
+          <strong id="p-cd-num">5</strong><span class="cd-timer-unit">s</span>
+        </div>
       </div>
 
-      <h2 style="font-size: 1.65rem; margin-top: 12px; margin-bottom: 6px; color: var(--text-main);">
-        คำถามรอบที่ <strong id="p-cd-next-round" style="color: var(--primary);">2</strong>
-      </h2>
-      <p class="subtitle" id="p-cd-status" style="font-size: 0.95rem; margin-bottom: 18px;">
+      <!-- แถบความคืบหน้านับถอยหลังเส้นเล็กสวยงาม -->
+      <div class="countdown-compact-track">
+        <div class="countdown-compact-bar" id="p-cd-bar-fill"></div>
+      </div>
+
+      <p class="cooldown-subtitle-compact" id="p-cd-status">
         คำถามกำลังจะมา วางนิ้วรอได้เลย!
       </p>
 
-      <!-- Giant Central Glowing Countdown Circle on Mobile -->
-      <div class="countdown-hero-circle mobile">
-        <div class="countdown-hero-number mobile" id="p-cd-num">5</div>
-        <div class="countdown-hero-label">วินาที</div>
-      </div>
-
-      <div class="countdown-hero-track mobile">
-        <div class="countdown-hero-bar" id="p-cd-bar-fill"></div>
-      </div>
-
-      <div id="p-cd-pause-alert" style="display: none; margin-top: 20px; color: var(--gold); font-size: 0.9rem; font-weight: 700; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold); border-radius: 8px; padding: 10px 16px;">
+      <div id="p-cd-pause-alert" style="display: none;" class="cooldown-pause-alert">
         ⏸️ อาจารย์กำลังอธิบายสรุปคำตอบ...
+      </div>
+
+      <!-- ตารางคะแนนสดประจำรอบ (Live Leaderboard Table) -->
+      <div class="cooldown-leaderboard-card">
+        <div class="cooldown-leaderboard-header">
+          <span>🏆 ตารางคะแนนสด (Live Ranking)</span>
+          <span class="cooldown-my-rank" id="p-cd-my-rank-tag">ฉันอยู่อันดับ -</span>
+        </div>
+        <div class="cooldown-table-wrap">
+          <table class="cooldown-leaderboard-table">
+            <thead>
+              <tr>
+                <th style="width: 22%;">อันดับ</th>
+                <th>ผู้เล่น</th>
+                <th style="width: 32%; text-align: right;">คะแนนสะสม</th>
+              </tr>
+            </thead>
+            <tbody id="p-cd-leaderboard-body">
+              <!-- JS จะสร้างแถวผู้เล่นให้สดๆ ทุกรอบ -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -430,14 +452,34 @@
       requestWakeLock();
     }, { once: true });
 
-    // Procedural Player BGM Engine
+    // Procedural Player BGM Engine (Lo-Fi Casino & Game Show Groove)
     let isPlayerBgmEnabled = false;
     let playerBgmInterval = null;
     let playerBgmStep = 0;
 
+    function applyPlayerBgmPreference() {
+      try {
+        const saved = localStorage.getItem("pim_player_bgm_enabled");
+        if (saved === "1") {
+          isPlayerBgmEnabled = true;
+          const btn = document.getElementById("btn-toggle-player-bgm");
+          if (btn) {
+            const labelEl = btn.querySelector(".bgm-label-text");
+            if (labelEl) labelEl.innerText = "เพลง: เปิด";
+            else btn.innerText = "🎵 เพลง: เปิด";
+            btn.classList.add("active");
+          }
+        }
+      } catch(e) {}
+    }
+
     function togglePlayerBGM() {
       initAudioContext();
       isPlayerBgmEnabled = !isPlayerBgmEnabled;
+      try {
+        localStorage.setItem("pim_player_bgm_enabled", isPlayerBgmEnabled ? "1" : "0");
+      } catch(e) {}
+
       const btn = document.getElementById("btn-toggle-player-bgm");
       if (btn) {
         const labelEl = btn.querySelector(".bgm-label-text");
@@ -460,37 +502,77 @@
       if (!isPlayerBgmEnabled || playerBgmInterval) return;
       initAudioContext();
       if (!pAudioCtx || !masterGain) return;
+      if (pAudioCtx.state === 'suspended') {
+        pAudioCtx.resume();
+      }
 
-      const chords = [
-        [220, 261.63, 329.63],
-        [174.61, 261.63, 329.63],
-        [130.81, 261.63, 329.63],
-        [196.00, 246.94, 293.66]
+      // Lo-Fi Jazz & Game Show Harmonies (Am7, Fmaj7, Cmaj7, G7)
+      const progression = [
+        { root: 110, chord: [220, 261.63, 329.63, 392.00] },
+        { root: 87.31, chord: [174.61, 261.63, 329.63, 392.00] },
+        { root: 65.41, chord: [130.81, 261.63, 329.63, 392.00] },
+        { root: 98.00, chord: [196.00, 246.94, 293.66, 349.23] }
       ];
       playerBgmStep = 0;
 
-      function playStep() {
+      function playBeat() {
         if (!isPlayerBgmEnabled || !pAudioCtx || !masterGain) return;
-        const currentChord = chords[playerBgmStep % chords.length];
+        if (pAudioCtx.state === 'suspended') {
+          pAudioCtx.resume();
+        }
+
+        const barIndex = Math.floor(playerBgmStep / 4);
+        const beatInBar = playerBgmStep % 4;
+        const currentHarmony = progression[barIndex % progression.length];
         const now = pAudioCtx.currentTime;
 
-        currentChord.forEach(f => {
-          const osc = pAudioCtx.createOscillator();
-          const gain = pAudioCtx.createGain();
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(f, now);
-          gain.gain.setValueAtTime(0.035 * currentVolume, now);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-          osc.connect(gain);
-          gain.connect(masterGain);
-          osc.start(now);
-          osc.stop(now + 0.5);
-        });
+        // 1. Warm Bassline Note on Beat 1 & 3
+        if (beatInBar === 0 || beatInBar === 2) {
+          const bass = pAudioCtx.createOscillator();
+          const bassGain = pAudioCtx.createGain();
+          bass.type = "triangle";
+          bass.frequency.setValueAtTime(currentHarmony.root, now);
+          bassGain.gain.setValueAtTime(0.18 * currentVolume, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          bass.connect(bassGain);
+          bassGain.connect(masterGain);
+          bass.start(now);
+          bass.stop(now + 0.35);
+        }
+
+        // 2. Mellow Electric Piano Chord Tone on Beat 1 & 2.5
+        if (beatInBar === 0 || beatInBar === 2) {
+          currentHarmony.chord.forEach((f, idx) => {
+            const osc = pAudioCtx.createOscillator();
+            const gain = pAudioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(f, now);
+            gain.gain.setValueAtTime((0.08 / (idx + 1)) * currentVolume, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(now);
+            osc.stop(now + 0.45);
+          });
+        }
+
+        // 3. Subtle Rhythm Click Pulse
+        const click = pAudioCtx.createOscillator();
+        const clickGain = pAudioCtx.createGain();
+        click.type = "square";
+        click.frequency.setValueAtTime(beatInBar % 2 === 1 ? 4200 : 6400, now);
+        clickGain.gain.setValueAtTime((beatInBar % 2 === 1 ? 0.045 : 0.015) * currentVolume, now);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+        click.connect(clickGain);
+        clickGain.connect(masterGain);
+        click.start(now);
+        click.stop(now + 0.02);
+
         playerBgmStep++;
       }
 
-      playStep();
-      playerBgmInterval = setInterval(playStep, 500);
+      playBeat();
+      playerBgmInterval = setInterval(playBeat, 420);
     }
 
     function stopPlayerBGM() {
@@ -1084,6 +1166,10 @@
         session.audienceScore = myBreakdown.audienceScore;
       }
 
+      if (result.leaderboard) {
+        session.lastLeaderboard = result.leaderboard;
+      }
+
       if (result.isGameOver) {
         showGameOverScreen(result, result.leaderboard, myBreakdown);
       } else {
@@ -1172,9 +1258,72 @@
           if (statusEl) statusEl.innerText = "คำถามกำลังจะมา วางนิ้วรอได้เลย!";
           if (pauseAlert) pauseAlert.style.display = "none";
           vibrateDevice(40);
+
+          if (data.leaderboard) {
+            session.lastLeaderboard = data.leaderboard;
+            renderCooldownLeaderboard(data.leaderboard);
+          } else if (session.lastLeaderboard) {
+            renderCooldownLeaderboard(session.lastLeaderboard);
+          }
         }
       });
     });
+
+    function renderCooldownLeaderboard(leaderboard) {
+      const tbody = document.getElementById("p-cd-leaderboard-body");
+      const myRankTag = document.getElementById("p-cd-my-rank-tag");
+      if (!tbody || !leaderboard) return;
+
+      const VEGAS_SUITS = {
+        spade: { symbol: "♠", badgeClass: "badge-spade" },
+        heart: { symbol: "♥", badgeClass: "badge-heart" },
+        diamond: { symbol: "♦", badgeClass: "badge-diamond" },
+        club: { symbol: "♣", badgeClass: "badge-club" }
+      };
+
+      function normalizeAvatar(val) {
+        if (!val) return "spade";
+        const s = String(val).toLowerCase();
+        if (s === "heart" || s === "02" || s === "06" || s === "♥") return "heart";
+        if (s === "diamond" || s === "03" || s === "♦") return "diamond";
+        if (s === "club" || s === "04" || s === "♣") return "club";
+        return "spade";
+      }
+
+      let rows = "";
+      let myRankNum = null;
+
+      leaderboard.forEach(function(p, idx) {
+        let rankBadge = "" + (idx + 1);
+        let rankClass = "";
+        if (idx === 0) { rankBadge = "🥇 1"; rankClass = "rank-1"; }
+        else if (idx === 1) { rankBadge = "🥈 2"; rankClass = "rank-2"; }
+        else if (idx === 2) { rankBadge = "🥉 3"; rankClass = "rank-3"; }
+
+        const isMe = (p.id === session.playerId);
+        if (isMe) myRankNum = (idx + 1);
+        const meTag = isMe ? ' <span class="cd-me-badge">(ฉัน)</span>' : '';
+        const c = VEGAS_SUITS[normalizeAvatar(p.avatar)] || VEGAS_SUITS.spade;
+
+        rows += '<tr class="' + rankClass + (isMe ? ' is-me-row' : '') + '">' +
+                  '<td class="cd-rank-col">' + rankBadge + '</td>' +
+                  '<td class="cd-player-col">' +
+                    '<span class="vegas-chip-badge ' + c.badgeClass + '">' + c.symbol + '</span> ' +
+                    '<span class="cd-player-name">' + escapeHtml(p.name) + '</span>' + meTag +
+                  '</td>' +
+                  '<td class="cd-score-col">' + Number(p.score).toLocaleString() + ' แต้ม</td>' +
+                '</tr>';
+      });
+
+      tbody.innerHTML = rows;
+      if (myRankTag) {
+        if (myRankNum !== null) {
+          myRankTag.innerHTML = 'ฉันอยู่อันดับ <strong>#' + myRankNum + '</strong>';
+        } else {
+          myRankTag.innerText = 'ทั้งหมด ' + leaderboard.length + ' คน';
+        }
+      }
+    }
 
     socket.on("game:cooldown-tick", function(data) {
       const cdView = document.getElementById("cooldown-view");

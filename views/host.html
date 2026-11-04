@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>คิดเหมือนรอด - Host Presentation Dashboard</title>
-    <link rel="stylesheet" href="/css/style.css?v=3.1">
+    <link rel="stylesheet" href="/css/style.css?v=3.2">
     <script src="/socket.io/socket.io.js"></script>
     <style>
       .container {
@@ -447,6 +447,8 @@
       }
 
       function testSound() {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') ctx.resume();
         SFX.reveal();
       }
 
@@ -460,15 +462,18 @@
 
         setVolume: function(val) {
           currentBgmVolume = Math.max(0, Math.min(1, parseFloat(val)));
-          if (bgmGainNode && audioCtx) {
-            bgmGainNode.gain.setValueAtTime(isBgmEnabled ? currentBgmVolume : 0, audioCtx.currentTime);
+          const ctx = getAudioContext();
+          if (bgmGainNode && ctx) {
+            bgmGainNode.gain.setValueAtTime(isBgmEnabled ? currentBgmVolume : 0, ctx.currentTime);
           }
         },
 
         toggle: function(enabled) {
           isBgmEnabled = enabled;
-          if (bgmGainNode && audioCtx) {
-            bgmGainNode.gain.setValueAtTime(enabled ? currentBgmVolume : 0, audioCtx.currentTime);
+          const ctx = getAudioContext();
+          if (ctx && ctx.state === 'suspended') ctx.resume();
+          if (bgmGainNode && ctx) {
+            bgmGainNode.gain.setValueAtTime(enabled ? currentBgmVolume : 0, ctx.currentTime);
           }
           if (!enabled) {
             this.stop();
@@ -482,6 +487,7 @@
           if (!isBgmEnabled) return;
           const ctx = getAudioContext();
           if (!ctx) return;
+          if (ctx.state === 'suspended') ctx.resume();
 
           if (this.timer) clearInterval(this.timer);
           this.step = 0;
@@ -517,6 +523,7 @@
           if (!isBgmEnabled || this.mode === "OFF") return;
           const ctx = getAudioContext();
           if (!ctx) return;
+          if (ctx.state === 'suspended') ctx.resume();
 
           const lookahead = 0.15;
           const secondsPerBeat = 60.0 / this.bpm;
