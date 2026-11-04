@@ -818,30 +818,20 @@
       }
     }
 
-    // ฟังก์ชันอัปเดตสถานะ รอดชีวิต vs ตกรอบ ให้ชัดเจน 100% ทั่วทุกหน้าจอ
+    // ฟังก์ชันอัปเดตสถานะของผู้เล่น (ระบบเก็บแต้มสะสม: ทุกคนแข่งขันตลอดทั้งเกม)
     function updatePlayerAliveStatusUI() {
       const badge = document.getElementById("my-status-badge");
       const avCircle = document.getElementById("my-avatar-display");
       const specBanner = document.getElementById("spectator-alert-banner");
       const container = document.getElementById("app");
 
-      if (session.isAlive) {
-        if (badge) {
-          badge.className = "status-badge badge-alive";
-          badge.innerHTML = "🟢 รอดชีวิต";
-        }
-        if (avCircle) avCircle.classList.remove("avatar-eliminated");
-        if (specBanner) specBanner.style.display = "none";
-        if (container) container.classList.remove("eliminated-mode");
-      } else {
-        if (badge) {
-          badge.className = "status-badge badge-eliminated";
-          badge.innerHTML = "💀 ตกรอบ";
-        }
-        if (avCircle) avCircle.classList.add("avatar-eliminated");
-        if (specBanner) specBanner.style.display = "block";
-        if (container) container.classList.add("eliminated-mode");
+      if (badge) {
+        badge.className = "status-badge badge-alive";
+        badge.innerHTML = "🟢 กำลังแข่งขัน";
       }
+      if (avCircle) avCircle.classList.remove("avatar-eliminated");
+      if (specBanner) specBanner.style.display = "none";
+      if (container) container.classList.remove("eliminated-mode");
     }
 
     function checkAutoResume() {
@@ -935,10 +925,10 @@
           setLockNotice(`คุณเลือกข้อ ${res.selectedChoice} แล้ว (กู้คืนสำเร็จ)`);
         }
       } else if (res.roomStatus === "RESULT" && res.lastResult) {
-        document.getElementById("lobby-view").style.display = "none";
-        document.getElementById("result-view").style.display = "none";
-        document.getElementById("question-view").style.display = "block";
-        lockAllChoices();
+        showResultScreen(res.lastResult, {
+          totalScore: res.score,
+          survived: false
+        });
       }
     }
 
@@ -1417,8 +1407,8 @@
         playBlankClickSound();
         setTimeout(playChipSound, 150);
         if (survCard) survCard.className = "survival-status-card survived";
-        if (survIcon) survIcon.innerText = "⚪";
-        if (survTitle) survTitle.innerText = "⚪ CLICK! รังเพลิงว่าง – คุณรอดชีวิต!";
+        if (survIcon) survIcon.innerText = "🎯";
+        if (survTitle) survTitle.innerText = "🎯 ได้แต้มเสียงส่วนใหญ่!";
         let bonusText = "";
         if (myStats.speedBonus) {
           bonusText = " + โบนัสความเร็ว " + myStats.speedBonus + " แต้ม";
@@ -1427,25 +1417,12 @@
           survDesc.innerText = "คุณเลือกไพ่ข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ตรงกับเสียงส่วนใหญ่ (+1,000 แต้ม" + bonusText + ")";
         }
       } else {
-        // ผู้เล่นที่ตกรอบ (Eliminated)
-        playGunshotSound();
-        vibrateDevice(250);
-        if (survCard) survCard.className = "survival-status-card eliminated";
-        
-        if (session.selectedChoice) {
-          // เพิ่งตกรอบในรอบนี้จากการตอบผิด
-          if (survIcon) survIcon.innerText = "💥";
-          if (survTitle) survTitle.innerText = "💥 BANG! รังเพลิงลั่น – คุณตกรอบ!";
-          if (survDesc) {
-            survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ไม่ใช่คำตอบส่วนใหญ่ → ระบบล็อกคำตอบในรอบถัดไป";
-          }
-        } else {
-          // ตกรอบอยู่แล้วตั้งแต่รอบก่อน
-          if (survIcon) survIcon.innerText = "🔒";
-          if (survTitle) survTitle.innerText = "🔒 คุณอยู่ในสถานะตกรอบ";
-          if (survDesc) {
-            survDesc.innerText = "คุณตกรอบแล้ว ไม่สามารถส่งคำตอบได้ (รอรับชมผู้รอดชีวิต)";
-          }
+        playBlankClickSound();
+        if (survCard) survCard.className = "survival-status-card missed";
+        if (survIcon) survIcon.innerText = "💡";
+        if (survTitle) survTitle.innerText = "💡 รอบนี้ไม่ได้รับคะแนน";
+        if (survDesc) {
+          survDesc.innerText = "คุณเลือกไพ่ข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ไม่ใช่เสียงส่วนใหญ่ (0 แต้ม) → สะสมแต้มต่อในรอบถัดไป!";
         }
       }
 

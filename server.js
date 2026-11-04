@@ -53,7 +53,7 @@ app.get("/api/export-results/:roomId", (req, res) => {
   const playersList = Object.values(room.players).sort((a, b) => b.score - a.score);
   let csv = "Rank,Player ID,Name,Status,Total Score,Audience Score\n";
   playersList.forEach((p, idx) => {
-    const status = p.alive ? "Survived" : "Eliminated";
+    const status = "Active";
     csv += `"${idx + 1}","${p.id}","${p.name}","${status}","${p.score}","${p.audienceScore || 0}"\n`;
   });
 
@@ -427,11 +427,7 @@ io.on("connection", (socket) => {
     const player = room.players[data.playerId];
     if (!player) return callback({ success: false, message: "ไม่พบผู้เล่น" });
 
-    // ผู้เล่นที่ตกรอบแล้ว ไม่อนุญาตให้ตอบคำถามเด็ดขาดตามคำสั่ง
-    if (!player.alive) {
-      return callback({ success: false, message: "คุณตกรอบแล้ว ไม่สามารถส่งคำตอบได้" });
-    }
-
+    // ในระบบเก็บแต้มสะสม: ทุกคนตอบได้ทุกรอบ ไม่มีใครถูกล็อก
     if (room.submissions[data.playerId]) {
       return callback({ success: false, message: "คุณส่งคำตอบไปแล้ว" });
     }
@@ -441,22 +437,23 @@ io.on("connection", (socket) => {
     room.submissions[data.playerId] = {
       choice: data.choice,
       timeLeft: remainingSec,
-      isAudience: !player.alive // ถ้าตกรอบแล้ว บันทึกว่าเป็นการทายใจ (Audience)
+      isAudience: false
     };
 
-    // นับจำนวนคนที่ยังมีชีวิตและตอบแล้ว
-    const alivePlayers = Object.values(room.players).filter(p => p.alive);
-    const aliveAnsweredCount = alivePlayers.filter(p => room.submissions[p.id]).length;
+    // นับจำนวนคนที่ส่งคำตอบแล้ว
+    const allPlayers = Object.values(room.players);
+    const answeredCount = allPlayers.filter(p => room.submissions[p.id]).length;
 
     io.to(room.id).emit("game:answer-count-update", {
-      answeredCount: aliveAnsweredCount,
-      totalAlive: alivePlayers.length
+      answeredCount: answeredCount,
+      totalAlive: allPlayers.length,
+      totalPlayers: allPlayers.length
     });
 
     callback({ success: true, choice: data.choice, timeLeft: remainingSec });
 
-    // Early Auto-Calculate: ถ้าคนที่มีชีวิตอยู่ตอบครบทุกคนแล้ว จบรอบทันทีไม่ต้องรอหมดเวลา!
-    if (aliveAnsweredCount >= alivePlayers.length && alivePlayers.length > 0) {
+    // Early Auto-Calculate: ถ้าทุกคนในห้องตอบครบแล้ว จบรอบทันทีไม่ต้องรอหมดเวลา!
+    if (answeredCount >= allPlayers.length && allPlayers.length > 0) {
       if (room.timerInterval) {
         clearInterval(room.timerInterval);
         room.timerInterval = null;
@@ -608,7 +605,13 @@ io.on("connection", (socket) => {
 // 4. ฟังก์ชันคำนวณคะแนนและผล Majority (Core Logic)
 // ==========================================
 function calculateRoundResult(room) {
-  if (room.status === "RESULT" || room.status === "GAME_OVER") return;
+  if (room.status !== "ANSWERING") return;
+  room.status = "CALCULATING";
+
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+    room.timerInterval = null;
+  }
 
   const currentRound = room.currentRound;
   const submissions = room.submissions || {};
@@ -639,56 +642,52 @@ function calculateRoundResult(room) {
   let survivingPlayers = [];
   const playerRoundBreakdowns = {};
 
-  // 3. ตัดสินผลของผู้เล่นทุกคน
+  // 3. ตัดสินผลของผู้เล่นทุกคน (ระบบเก็บแต้มสะสม: ทุกคนเล่นได้ครบทุกข้อ ไม่มีใครตกรอบ)
+  let scoredCount = 0;
+  const totalPlayersCount = Object.keys(room.players).length;
+
   Object.values(room.players).forEach(p => {
     const sub = submissions[p.id];
     let earnedBase = 0;
     let earnedSpeed = 0;
-    let isSurvived = false;
-    let audienceCorrect = false;
+    let isMatch = false;
 
-    if (p.alive) {
-      if (sub && majorityList.includes(sub.choice)) {
-        isSurvived = true;
-        earnedBase = 1000;
-        earnedSpeed = (sub.timeLeft || 0) * 10;
-        p.score += earnedBase + earnedSpeed;
-        survivingPlayers.push(p);
-      } else {
-        p.alive = false;
-        eliminatedCount++;
-      }
-    } else {
-      // โหมดผู้ชม (Audience/Spectator Mode): ถ้าทายถูก ได้แต้มหยั่งรู้
-      if (sub && majorityList.includes(sub.choice)) {
-        audienceCorrect = true;
-        p.audienceScore = (p.audienceScore || 0) + 500;
-      }
+    // ทุกคนยังคงมีสถานะ Active ตลอดทั้งเกม
+    p.alive = true;
+
+    if (sub && majorityList.includes(sub.choice)) {
+      isMatch = true;
+      earnedBase = 1000;
+      earnedSpeed = (sub.timeLeft || 0) * 10;
+      p.score += earnedBase + earnedSpeed;
+      scoredCount++;
     }
+
+    survivingPlayers.push(p);
 
     playerRoundBreakdowns[p.id] = {
       choice: sub ? sub.choice : null,
-      survived: isSurvived,
-      isAlive: p.alive,
+      survived: isMatch, // true = ตอบตรงเสียงส่วนใหญ่ (+แต้ม), false = ไม่ได้แต้มในรอบนี้
+      isMatch: isMatch,
+      isAlive: true,
       baseScore: earnedBase,
       speedScore: earnedSpeed,
+      speedBonus: earnedSpeed,
       timeLeft: sub ? sub.timeLeft : 0,
       totalScore: p.score,
-      audienceCorrect: audienceCorrect,
-      audienceScore: p.audienceScore || 0
+      roundScore: earnedBase + earnedSpeed,
+      audienceCorrect: isMatch,
+      audienceScore: 0
     };
   });
 
   // 4. ตัดสินสถานะถัดไป (RESULT หรือ GAME_OVER)
-  let nextStatus = "RESULT";
+  // จบเกมเมื่อเล่นครบจำนวนรอบสูงสุดที่กำหนดไว้ (เช่น 6 รอบ)
+  let nextStatus = (currentRound >= room.maxRounds) ? "GAME_OVER" : "RESULT";
   let winners = [];
 
-  if (survivingPlayers.length === 1) {
-    nextStatus = "GAME_OVER";
-    winners = survivingPlayers;
-  } else if (survivingPlayers.length === 0 || currentRound >= room.maxRounds) {
-    nextStatus = "GAME_OVER";
-    const pool = survivingPlayers.length > 0 ? survivingPlayers : Object.values(room.players);
+  if (nextStatus === "GAME_OVER") {
+    const pool = Object.values(room.players);
     const maxScore = pool.length > 0 ? Math.max(...pool.map(p => p.score)) : 0;
     winners = pool.filter(p => p.score === maxScore);
   }
@@ -700,8 +699,8 @@ function calculateRoundResult(room) {
       name: p.name,
       avatar: p.avatar || "spade",
       score: p.score,
-      alive: p.alive,
-      audienceScore: p.audienceScore || 0
+      alive: true,
+      audienceScore: 0
     }));
 
   room.status = nextStatus;
@@ -713,9 +712,10 @@ function calculateRoundResult(room) {
     audienceCounts: audienceCounts,
     majority: majorityList,
     maxVotes: maxVotes,
-    eliminatedCount: eliminatedCount,
-    aliveCount: survivingPlayers.length,
-    totalPlayers: Object.keys(room.players).length,
+    eliminatedCount: 0,
+    scoredCount: scoredCount,
+    aliveCount: totalPlayersCount,
+    totalPlayers: totalPlayersCount,
     isGameOver: (nextStatus === "GAME_OVER"),
     winners: winners.map(w => ({ id: w.id, name: w.name, score: w.score })),
     leaderboard: leaderboard

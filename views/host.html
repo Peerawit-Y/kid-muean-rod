@@ -228,24 +228,18 @@
           <span id="host-timer-text" style="color: var(--primary); font-size: 1.5rem; font-weight: 800;">--:--</span>
         </div>
 
-        <!-- Live Player Status Telemetry (คนเหลือเท่าไหร่ / ตกรอบ / ทั้งหมด) -->
+        <!-- Live Player Status Telemetry (ระบบเก็บแต้มสะสม: ผู้เล่น / ได้แต้ม / ตอบแล้ว) -->
         <div class="host-telemetry-grid">
-          <div class="telemetry-card card-alive">
-            <span class="telemetry-label">🟢 รอดชีวิต (เหลือ)</span>
-            <div class="telemetry-val-box">
-              <strong id="telemetry-alive-val">0</strong> <span class="telemetry-unit">คน</span>
-            </div>
-          </div>
-          <div class="telemetry-card card-eliminated">
-            <span class="telemetry-label">💀 ตกรอบ</span>
-            <div class="telemetry-val-box">
-              <strong id="telemetry-eliminated-val">0</strong> <span class="telemetry-unit">คน</span>
-            </div>
-          </div>
           <div class="telemetry-card card-total">
-            <span class="telemetry-label">👥 ผู้เล่นทั้งหมด</span>
+            <span class="telemetry-label">👥 ผู้เข้าแข่งขันทั้งหมด</span>
             <div class="telemetry-val-box">
               <strong id="telemetry-total-val">0</strong> <span class="telemetry-unit">คน</span>
+            </div>
+          </div>
+          <div class="telemetry-card card-alive">
+            <span class="telemetry-label">🎯 ตอบตรงส่วนใหญ่รอบนี้</span>
+            <div class="telemetry-val-box">
+              <strong id="telemetry-alive-val">0</strong> <span class="telemetry-unit">คน</span>
             </div>
           </div>
           <div class="telemetry-card card-answering" id="telemetry-card-answered" style="display: none;">
@@ -1019,7 +1013,6 @@
         if (answered !== undefined) hostCurrentAnsweredCount = answered;
 
         const elAlive = document.getElementById("telemetry-alive-val");
-        const elElim = document.getElementById("telemetry-eliminated-val");
         const elTotal = document.getElementById("telemetry-total-val");
         const elAns = document.getElementById("telemetry-answered-val");
         const elDenom = document.getElementById("telemetry-alive-denom");
@@ -1028,17 +1021,14 @@
         const pillAns = document.getElementById("theater-answered-pill");
         const roundBadge = document.getElementById("theater-round-badge");
 
-        const eliminated = Math.max(0, hostCurrentTotalCount - hostCurrentAliveCount);
-
         if (elAlive) elAlive.innerText = hostCurrentAliveCount;
-        if (elElim) elElim.innerText = eliminated;
         if (elTotal) elTotal.innerText = hostCurrentTotalCount;
         if (elAns) elAns.innerText = hostCurrentAnsweredCount;
-        if (elDenom) elDenom.innerText = hostCurrentAliveCount;
-        if (pillAlive) pillAlive.innerText = `🟢 รอดชีวิต ${hostCurrentAliveCount} คน`;
+        if (elDenom) elDenom.innerText = hostCurrentTotalCount;
+        if (pillAlive) pillAlive.innerText = `👥 ผู้เล่น ${hostCurrentTotalCount} คน`;
         if (pillAns) {
           pillAns.style.display = (hostSession.currentStatus === "ANSWERING") ? "inline-block" : "none";
-          pillAns.innerText = `ตอบแล้ว ${hostCurrentAnsweredCount} / ${hostCurrentAliveCount}`;
+          pillAns.innerText = `ตอบแล้ว ${hostCurrentAnsweredCount} / ${hostCurrentTotalCount}`;
         }
         if (roundBadge) {
           roundBadge.innerText = hostSession.currentRound > 0 
@@ -1473,12 +1463,12 @@
 
           document.getElementById("host-round-text").innerText = `จบการแข่งขัน (${res.maxRounds} รอบ)`;
           document.getElementById("host-timer-text").innerText = "END";
-          document.getElementById("host-stat-label").innerText = "ผู้ชนะ / ผู้รอดชีวิต:";
-          document.getElementById("host-answered-stat").innerText = res.aliveCount;
+          document.getElementById("host-stat-label").innerText = "ผู้ชนะคะแนนสูงสุด:";
+          document.getElementById("host-answered-stat").innerText = res.winners ? res.winners.length : 0;
           document.getElementById("host-stat-sep").style.display = "inline";
           document.getElementById("host-alive-stat").style.display = "inline";
           document.getElementById("host-alive-stat").innerText = res.totalPlayers;
-          document.getElementById("host-stat-extra").innerText = "";
+          document.getElementById("host-stat-extra").innerText = "(ผู้เล่นทั้งหมด)";
 
           actBtn.innerText = "เริ่มเกมใหม่ (Restart Game)";
           actBtn.style.background = "var(--gold)";
@@ -1488,24 +1478,19 @@
           renderHostGameOver(res, res.leaderboard);
         } else {
           hostSession.currentStatus = "RESULT";
-          updateHostTelemetry(res.aliveCount, res.totalPlayers, 0);
+          updateHostTelemetry(res.scoredCount !== undefined ? res.scoredCount : res.aliveCount, res.totalPlayers, 0);
           
-          if (res.eliminatedCount > 0) {
-            SFX.gunshot();
-            setTimeout(SFX.reveal, 400);
-          } else {
-            SFX.blankClick();
-            setTimeout(SFX.reveal, 200);
-          }
+          SFX.blankClick();
+          setTimeout(SFX.reveal, 200);
 
           document.getElementById("host-round-text").innerText = `สรุปผลรอบที่ ${res.round} / ${res.maxRounds}`;
           document.getElementById("host-timer-text").innerText = "จบแล้ว";
-          document.getElementById("host-stat-label").innerText = "ผู้รอดชีวิต:";
-          document.getElementById("host-answered-stat").innerText = res.aliveCount;
+          document.getElementById("host-stat-label").innerText = "ได้แต้มรอบนี้:";
+          document.getElementById("host-answered-stat").innerText = res.scoredCount !== undefined ? res.scoredCount : res.aliveCount;
           document.getElementById("host-stat-sep").style.display = "inline";
           document.getElementById("host-alive-stat").style.display = "inline";
           document.getElementById("host-alive-stat").innerText = res.totalPlayers;
-          document.getElementById("host-stat-extra").innerText = "(คนทั้งหมด)";
+          document.getElementById("host-stat-extra").innerText = "(คนตอบตรงส่วนใหญ่)";
 
           actBtn.innerText = `เริ่มรอบที่ ${res.round + 1} (Next Round)`;
           actBtn.style.background = "var(--primary)";
@@ -1788,8 +1773,9 @@
             });
 
             const banner = document.getElementById("host-reveal-banner");
+            const majorityText = (result.majority && result.majority.length > 0) ? result.majority.join(", ") : "ไม่มีผู้ตอบตรงกัน";
             if (banner) {
-              banner.innerHTML = `👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${result.majority.join(", ")}</strong>!`;
+              banner.innerHTML = `👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${majorityText}</strong>!`;
             }
             SFX.majorityFanfare();
           }, 450);
@@ -1802,9 +1788,10 @@
         const suits = { A: "♠", B: "♥", C: "♦", D: "♣" };
         const totalVotes = Math.max(1, result.counts.A + result.counts.B + result.counts.C + result.counts.D);
 
+        const majorityText = (result.majority && result.majority.length > 0) ? result.majority.join(", ") : "ไม่มีผู้ตอบตรงกัน";
         let html = `
           <div class="reveal-overlay-banner" style="margin-bottom: 14px;">
-            👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${result.majority.join(", ")}</strong>!
+            👑 เสียงส่วนใหญ่ของห้องคือข้อ: <strong>${majorityText}</strong>!
           </div>
         `;
 
