@@ -427,6 +427,11 @@ io.on("connection", (socket) => {
     const player = room.players[data.playerId];
     if (!player) return callback({ success: false, message: "ไม่พบผู้เล่น" });
 
+    // ผู้เล่นที่ตกรอบแล้ว ไม่อนุญาตให้ตอบคำถามเด็ดขาดตามคำสั่ง
+    if (!player.alive) {
+      return callback({ success: false, message: "คุณตกรอบแล้ว ไม่สามารถส่งคำตอบได้" });
+    }
+
     if (room.submissions[data.playerId]) {
       return callback({ success: false, message: "คุณส่งคำตอบไปแล้ว" });
     }

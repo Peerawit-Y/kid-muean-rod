@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>คิดเหมือนรอด - สำหรับผู้เล่น</title>
-  <link rel="stylesheet" href="/css/style.css?v=2.5">
+  <link rel="stylesheet" href="/css/style.css?v=2.9">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* สไตล์เพิ่มเติมสำหรับแถบควบคุมเสียง */
@@ -68,7 +68,10 @@
     <div id="player-profile-bar" class="profile-header-bar" style="display: none;">
       <div class="profile-user-info">
         <div class="profile-avatar-circle" id="my-avatar-display" title="ชิปประจำตัว"></div>
-        <span id="my-name-display" title="ชื่อผู้เล่น">ผู้เล่น</span>
+        <div class="profile-name-box">
+          <span id="my-name-display" title="ชื่อผู้เล่น">ผู้เล่น</span>
+          <span id="my-status-badge" class="status-badge badge-alive">🟢 รอดชีวิต</span>
+        </div>
       </div>
       
       <div class="profile-actions-box">
@@ -242,6 +245,11 @@
         <div class="timer-bar" id="timer-bar"></div>
       </div>
       <div class="timer-text" id="timer-num">25</div>
+
+      <!-- แบนเนอร์เตือนเฉพาะผู้เล่นที่ตกรอบ (ล็อกไม่ให้ตอบ) -->
+      <div id="spectator-alert-banner" class="spectator-alert-banner" style="display: none;">
+        <span>🔒 คุณตกรอบแล้ว — ระบบล็อกคำตอบ (รอรับชมผู้รอดชีวิต)</span>
+      </div>
 
       <!-- ตัวคำถาม (Question) -->
       <div class="question-card" id="question-text">
@@ -717,6 +725,8 @@
       const cdView = document.getElementById("cooldown-view");
       if (cdView) cdView.style.display = "none";
       document.getElementById("player-profile-bar").style.display = "none";
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.remove("gameplay-mode");
       
       document.getElementById("input-code").value = "";
       document.getElementById("input-name").value = "";
@@ -808,6 +818,32 @@
       }
     }
 
+    // ฟังก์ชันอัปเดตสถานะ รอดชีวิต vs ตกรอบ ให้ชัดเจน 100% ทั่วทุกหน้าจอ
+    function updatePlayerAliveStatusUI() {
+      const badge = document.getElementById("my-status-badge");
+      const avCircle = document.getElementById("my-avatar-display");
+      const specBanner = document.getElementById("spectator-alert-banner");
+      const container = document.getElementById("app");
+
+      if (session.isAlive) {
+        if (badge) {
+          badge.className = "status-badge badge-alive";
+          badge.innerHTML = "🟢 รอดชีวิต";
+        }
+        if (avCircle) avCircle.classList.remove("avatar-eliminated");
+        if (specBanner) specBanner.style.display = "none";
+        if (container) container.classList.remove("eliminated-mode");
+      } else {
+        if (badge) {
+          badge.className = "status-badge badge-eliminated";
+          badge.innerHTML = "💀 ตกรอบ";
+        }
+        if (avCircle) avCircle.classList.add("avatar-eliminated");
+        if (specBanner) specBanner.style.display = "block";
+        if (container) container.classList.add("eliminated-mode");
+      }
+    }
+
     function checkAutoResume() {
       try {
         const saved = sessionStorage.getItem("pim_player_session");
@@ -872,6 +908,7 @@
       session.maxRounds = res.maxRounds;
 
       renderProfileAvatarChip(session.avatar);
+      updatePlayerAliveStatusUI();
 
       document.getElementById("my-name-display").innerText = session.playerName;
       document.getElementById("my-live-score").innerText = Number(session.score).toLocaleString();
@@ -954,6 +991,7 @@
           session.audienceScore = 0;
 
           renderProfileAvatarChip(session.avatar);
+          updatePlayerAliveStatusUI();
 
           try {
             sessionStorage.setItem("pim_player_session", JSON.stringify({
@@ -1071,6 +1109,10 @@
       session.currentRound = 0;
       session.hasAnswered = false;
       session.selectedChoice = null;
+      updatePlayerAliveStatusUI();
+
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.remove("gameplay-mode");
 
       document.getElementById("my-live-score").innerText = "0";
       document.getElementById("question-view").style.display = "none";
@@ -1210,6 +1252,9 @@
 
     function showQuestionScreen(state) {
       safeTransitionFromResults(function() {
+        const appEl = document.getElementById("app");
+        if (appEl) appEl.classList.add("gameplay-mode");
+
         document.getElementById("lobby-view").style.display = "none";
         document.getElementById("result-view").style.display = "none";
         document.getElementById("gameover-view").style.display = "none";
@@ -1233,6 +1278,7 @@
         if (dispRound) dispRound.innerText = "รอบที่ " + state.round + " / " + total;
         updateCylinderHUD(state.round, total);
         playCylinderSpinSound();
+        updatePlayerAliveStatusUI();
         
         const tag = document.getElementById("player-status-tag");
         if (tag) {
@@ -1252,16 +1298,23 @@
         document.getElementById("text-c").innerText = state.question.optionC;
         document.getElementById("text-d").innerText = state.question.optionD;
 
-        ["a", "b", "c", "d"].forEach(function(id) {
-          const btn = document.getElementById("btn-" + id);
-          btn.classList.remove("selected", "disabled");
-          btn.disabled = false; // ทั้งคนรอดและผู้ชมสามารถเลือกได้!
-        });
-
         if (session.isAlive) {
+          // ผู้เล่นที่ยังรอด: ปลดล็อกปุ่มให้เลือกคำตอบได้ตามปกติ
+          ["a", "b", "c", "d"].forEach(function(id) {
+            const btn = document.getElementById("btn-" + id);
+            btn.classList.remove("selected", "disabled");
+            btn.disabled = false;
+          });
           setLockNotice("แตะตัวเลือกที่คิดว่าคนส่วนใหญ่จะตอบ");
         } else {
-          setLockNotice("โหมดผู้ชม: ทายว่าเสียงส่วนใหญ่จะเลือกข้อไหน เพื่อเก็บแต้มหยั่งรู้ (+500)");
+          // ผู้เล่นที่ตกรอบ: ล็อกปุ่มทั้งหมดทันที ไม่อนุญาตให้กดตอบได้เด็ดขาด
+          ["a", "b", "c", "d"].forEach(function(id) {
+            const btn = document.getElementById("btn-" + id);
+            btn.classList.remove("selected");
+            btn.classList.add("disabled");
+            btn.disabled = true;
+          });
+          setLockNotice("🔒 คุณตกรอบแล้ว — ระบบล็อกคำตอบ (รอรับชมผู้รอดชีวิต)");
         }
 
         updateTimerUI();
@@ -1289,6 +1342,11 @@
     }
 
     function handleAnswer(choice) {
+      // ป้องกันผู้เล่นที่ตกรอบไม่ให้กดส่งคำตอบได้เด็ดขาด
+      if (!session.isAlive) {
+        alert("คุณตกรอบแล้ว ไม่สามารถส่งคำตอบได้");
+        return;
+      }
       if (session.hasAnswered || session.remainingSec <= 0) return;
 
       playClickSound();
@@ -1297,11 +1355,7 @@
       session.selectedChoice = choice;
 
       highlightSelectedChoice(choice);
-      if (session.isAlive) {
-        setLockNotice("คุณเลือก " + choice + " แล้ว (ล็อกคำตอบเรียบร้อย)");
-      } else {
-        setLockNotice("คุณทายว่า Majority คือ " + choice + " (ล็อกคำตอบเรียบร้อย)");
-      }
+      setLockNotice("คุณเลือก " + choice + " แล้ว (ล็อกคำตอบเรียบร้อย)");
 
       socket.emit("player:submit-answer", {
         roomId: session.roomId,
@@ -1366,26 +1420,31 @@
         if (survIcon) survIcon.innerText = "⚪";
         if (survTitle) survTitle.innerText = "⚪ คุณรอดชีวิต!";
         if (survDesc) survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ตรงกับเสียงส่วนใหญ่ (+1,000 แต้ม)";
-      } else if (!myStats || !myStats.isAlive) {
-        if (myStats && myStats.audienceCorrect) {
-          playChipSound();
-          if (survCard) survCard.className = "survival-status-card spectator";
-          if (survIcon) survIcon.innerText = "🎯";
-          if (survTitle) survTitle.innerText = "🎯 ทายใจเสียงส่วนใหญ่สำเร็จ!";
-          if (survDesc) survDesc.innerText = "คุณทายข้อ " + myChoice + " ตรงกับ Majority ได้รับแต้มหยั่งรู้ (+500 แต้ม)";
-        } else {
-          playGunshotSound();
-          vibrateDevice(200);
-          if (survCard) survCard.className = "survival-status-card eliminated";
+      } else {
+        // ผู้เล่นที่ตกรอบ (Eliminated)
+        playGunshotSound();
+        vibrateDevice(250);
+        if (survCard) survCard.className = "survival-status-card eliminated";
+        
+        if (session.selectedChoice) {
+          // เพิ่งตกรอบในรอบนี้จากการตอบผิด
           if (survIcon) survIcon.innerText = "💥";
-          if (survTitle) survTitle.innerText = "💥 คุณไม่รอด!";
+          if (survTitle) survTitle.innerText = "💥 คุณตกรอบแล้ว! (Eliminated)";
           if (survDesc) {
-            survDesc.innerText = session.selectedChoice 
-              ? "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ซึ่งไม่ใช่คำตอบส่วนใหญ่ของห้อง"
-              : "คุณไม่ได้ส่งคำตอบทันเวลาในรอบนี้";
+            survDesc.innerText = "คุณเลือกข้อ " + myChoice + " (" + (suits[myChoice] || "") + ") ไม่ใช่คำตอบส่วนใหญ่ → ระบบจะล็อกคำตอบในรอบถัดไป";
+          }
+        } else {
+          // ตกรอบอยู่แล้วตั้งแต่รอบก่อน
+          if (survIcon) survIcon.innerText = "🔒";
+          if (survTitle) survTitle.innerText = "🔒 คุณอยู่ในสถานะตกรอบ";
+          if (survDesc) {
+            survDesc.innerText = "คุณตกรอบแล้ว ไม่สามารถส่งคำตอบได้ (รอรับชมผู้รอดชีวิต)";
           }
         }
       }
+
+      // อัปเดตแถบสถานะโปรไฟล์บาร์และหน้าจอให้ตรงกับสถานะรอด/ตกรอบ
+      updatePlayerAliveStatusUI();
 
       // 3. แสดงคำตอบที่มีคนตอบมากที่สุดในรอบนี้ (Majority)
       const choiceBox = document.getElementById("majority-choice-box");
@@ -1453,6 +1512,9 @@
     }
 
     function showGameOverScreen(result, leaderboard, myStats) {
+      const appEl = document.getElementById("app");
+      if (appEl) appEl.classList.remove("gameplay-mode");
+
       document.getElementById("question-view").style.display = "none";
       document.getElementById("result-view").style.display = "none";
       document.getElementById("gameover-view").style.display = "block";
