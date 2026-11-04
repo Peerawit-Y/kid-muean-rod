@@ -233,27 +233,47 @@ p.subtitle {
 }
 
 .profile-header-bar {
-  margin: calc(var(--space-xs) * -1) 0 var(--space-lg);
-  padding: var(--space-xs) var(--space-sm);
-  background: rgba(4, 20, 13, 0.85);
+  margin: calc(var(--space-xs) * -1) 0 var(--space-md);
+  padding: 6px 12px;
+  background: rgba(4, 20, 13, 0.9);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-md);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .profile-user-info {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 8px;
   min-width: 0;
-  font-weight: 700;
-  color: #fff;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+#my-name-display {
+  font-weight: 750;
+  color: var(--color-ink);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.profile-actions-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 /* Profile Chip Badge (Las Vegas Clay Chip) */
 .profile-avatar-circle {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.4rem;
+  height: 2.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,14 +293,17 @@ p.subtitle {
 
 .profile-score-badge {
   color: var(--brass-gold);
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  padding: 3px 12px;
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 3px 10px;
   border-radius: 99px;
   font-family: var(--font-mono);
   font-size: .8rem;
   font-weight: 800;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 /* =================================================================
@@ -1506,109 +1529,240 @@ a:hover {
 /* A. Ultra-Compact Mobile (≤350px - iPhone SE 1st, Galaxy Fold Cover) */
 @media (max-width: 350px) {
   body {
-    padding: 6px;
+    padding: 4px;
   }
   .container {
-    padding: 12px 10px;
+    padding: 8px 8px 10px 8px;
     border-radius: 14px;
   }
-  .container::before {
-    font-size: 0.6rem;
-    padding: 2px 8px;
-    letter-spacing: 0.08em;
+  .container::before, .container::after {
+    display: none !important;
   }
-  .container::after {
-    display: none;
+  .profile-header-bar {
+    margin: -4px 0 6px 0 !important;
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+  .profile-avatar-circle {
+    width: 1.85rem !important;
+    height: 1.85rem !important;
+  }
+  #my-name-display {
+    max-width: 75px !important;
+    font-size: 0.8rem !important;
+  }
+  .volume-control-box, .score-label, .bgm-label-text {
+    display: none !important;
+  }
+  .btn-toggle-player-bgm {
+    padding: 2px 5px !important;
+    font-size: 0.7rem !important;
+  }
+  .profile-score-badge {
+    padding: 2px 6px !important;
+    font-size: 0.72rem !important;
+  }
+  .btn-leave-room {
+    padding: 2px 5px !important;
+    font-size: 0.7rem !important;
+  }
+  .game-header {
+    margin-bottom: 3px !important;
+    font-size: 0.75rem !important;
+  }
+  .timer-bar-container {
+    height: 3px !important;
+    margin-bottom: 2px !important;
+  }
+  .timer-text {
+    font-size: 1rem !important;
+    margin-bottom: 3px !important;
+    line-height: 1 !important;
+  }
+  .question-card {
+    min-height: unset !important;
+    padding: 8px 10px !important;
+    margin-bottom: 5px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.3 !important;
+    border-radius: 8px !important;
   }
   .choices-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 5px !important;
   }
   .choice-btn {
-    min-height: 8.5rem;
-    padding: 6px;
+    min-height: 58px !important;
+    max-height: 84px !important;
+    padding: 4px 6px !important;
+    border-radius: 8px !important;
   }
   .choice-btn .card-pip.top-left {
-    top: 4px;
-    left: 4px;
+    top: 2px !important;
+    left: 3px !important;
   }
-  /* Hide inverted bottom-right pip on ultra-small screens to maximize text area */
+  .choice-btn .pip-rank {
+    font-size: 0.92rem !important;
+  }
+  .choice-btn .pip-suit {
+    font-size: 0.68rem !important;
+  }
   .choice-btn .card-pip.bottom-right {
-    display: none;
+    display: none !important;
   }
   .choice-btn .card-body {
-    padding: 4px 6px;
+    padding: 2px 4px 2px 14px !important;
   }
   .choice-btn .card-text {
-    font-size: 0.82rem;
-    line-height: 1.3;
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
   }
   .choice-btn .card-watermark {
-    font-size: 3.5rem;
+    font-size: 2.4rem !important;
+    opacity: 0.06 !important;
+  }
+  #lock-notice {
+    margin-top: 3px !important;
+    font-size: 0.7rem !important;
   }
   .avatar-selector {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
   }
   .room-badge .code {
-    font-size: 2.2rem;
+    font-size: 2.2rem !important;
   }
 }
 
-/* B. Standard Smartphones (351px - 520px - iPhone 14/15/16, Galaxy S24) */
-@media (min-width: 351px) and (max-width: 520px) {
+/* B. Standard Smartphones (351px - 600px - iPhone 14/15/16, Galaxy S24, Pixel) */
+@media (min-width: 351px) and (max-width: 600px) {
   body {
-    padding: var(--space-xs);
+    padding: 4px;
     place-items: start center;
   }
   .container {
-    padding: 16px 14px;
-    border-radius: 18px;
+    padding: 10px 12px 12px 12px;
+    border-radius: 16px;
+    width: 100% !important;
   }
-  .container::before {
-    font-size: 0.62rem;
-    padding: 3px 10px;
+  .container::before, .container::after {
+    display: none !important;
   }
-  .container::after {
-    top: 14px;
-    right: 14px;
-    font-size: 0.85rem;
+  /* Responsive Profile Header Bar on Mobile */
+  .profile-header-bar {
+    margin: -4px 0 8px 0 !important;
+    padding: 4px 8px !important;
+    gap: 6px !important;
+  }
+  .profile-avatar-circle {
+    width: 2.1rem !important;
+    height: 2.1rem !important;
+  }
+  #my-name-display {
+    max-width: 88px !important;
+    font-size: 0.85rem !important;
+  }
+  .volume-control-box, .score-label, .bgm-label-text {
+    display: none !important;
+  }
+  .btn-toggle-player-bgm {
+    padding: 3px 7px !important;
+    font-size: 0.75rem !important;
+  }
+  .profile-score-badge {
+    padding: 2px 8px !important;
+    font-size: 0.76rem !important;
+  }
+  .btn-leave-room {
+    padding: 2px 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* No-Scroll Single-Screen Question View on Mobile */
+  .game-header {
+    margin-bottom: 4px !important;
+    font-size: 0.78rem !important;
+    gap: 6px !important;
+  }
+  #display-round {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+  }
+  #player-status-tag {
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+  }
+  .timer-bar-container {
+    height: 3.5px !important;
+    margin-bottom: 3px !important;
+  }
+  .timer-text {
+    font-size: 1.15rem !important;
+    margin-bottom: 5px !important;
+    letter-spacing: 0.05em !important;
+    line-height: 1 !important;
+  }
+  .timer-text::after {
+    font-size: 0.65rem !important;
+  }
+  .question-card {
+    min-height: unset !important;
+    padding: 9px 12px !important;
+    margin-bottom: 6px !important;
+    font-size: clamp(0.96rem, 3.6vw, 1.15rem) !important;
+    line-height: 1.35 !important;
+    border-radius: 10px !important;
   }
   .choices-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-bottom: 4px !important;
   }
   .choice-btn {
-    min-height: 9.8rem;
-    padding: 8px;
+    min-height: clamp(64px, 11.5vh, 85px) !important;
+    max-height: 96px !important;
+    padding: 5px 8px !important;
+    border-radius: 10px !important;
+  }
+  .choice-btn::after {
+    inset: 3px !important;
+    border-radius: 7px !important;
   }
   .choice-btn .card-pip.top-left {
-    top: 6px;
-    left: 6px;
-  }
-  .choice-btn .card-pip.bottom-right {
-    bottom: 6px;
-    right: 6px;
+    top: 3px !important;
+    left: 4px !important;
   }
   .choice-btn .pip-rank {
-    font-size: 1.25rem;
+    font-size: 1rem !important;
+    line-height: 1 !important;
   }
   .choice-btn .pip-suit {
-    font-size: 1rem;
+    font-size: 0.75rem !important;
+    margin-top: 0 !important;
+  }
+  .choice-btn .card-pip.bottom-right {
+    display: none !important;
   }
   .choice-btn .card-body {
-    padding: 8px 10px;
+    padding: 2px 4px 2px 18px !important;
+    min-height: 0 !important;
   }
   .choice-btn .card-text {
-    font-size: 0.94rem;
-    line-height: 1.38;
+    font-size: clamp(0.82rem, 3.2vw, 0.96rem) !important;
+    line-height: 1.25 !important;
+    font-weight: 750 !important;
   }
   .choice-btn .card-watermark {
-    font-size: 4.4rem;
+    font-size: 2.8rem !important;
+    opacity: 0.07 !important;
+  }
+  #lock-notice {
+    margin-top: 4px !important;
+    font-size: 0.72rem !important;
   }
   .avatar-selector {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
   }
   .control-panel-bar {
     align-items: stretch;
@@ -1893,23 +2047,24 @@ body.theater-mode .casino-chip .chip-suit {
 /* Mobile Responsive for Casino Chips HUD */
 @media (max-width: 600px) {
   .casino-rounds-hud {
-    gap: 4px;
-    padding: 3px 6px;
+    gap: 3px !important;
+    padding: 2px 5px !important;
   }
   .casino-chip {
-    width: 29px;
-    height: 29px;
-    border-width: 1.5px;
+    width: 25px !important;
+    height: 25px !important;
+    border-width: 1.5px !important;
   }
   .casino-chip .chip-num {
-    font-size: 0.72rem;
+    font-size: 0.65rem !important;
   }
   .casino-chip .chip-suit {
-    font-size: 0.55rem;
-    margin-top: 0px;
+    font-size: 0.5rem !important;
+    margin-top: 0px !important;
   }
   .casino-chip.active {
-    border-width: 2.5px !important;
+    border-width: 2px !important;
+    transform: scale(1.1) !important;
   }
 }
 
@@ -1933,6 +2088,224 @@ body.theater-mode .casino-chip .chip-suit {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
+}
+
+/* ===================================================
+   🏆 Round Result Screen (หน้าแสดงผลลัพธ์ประจำรอบ: บอกรอด/ไม่รอด และคำตอบมากสุด)
+   =================================================== */
+.round-result-stage {
+  text-align: center;
+  padding: 8px 0;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.result-stage-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid var(--gold);
+  border-radius: 99px;
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+/* Survival Status Card (รอด / ไม่รอด) */
+.survival-status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  text-align: left;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.survival-status-card.survived {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.4) 100%);
+  border: 1.5px solid #10b981;
+}
+
+.survival-status-card.survived h2 {
+  color: #34d399;
+  font-size: 1.3rem;
+  font-weight: 850;
+  margin: 0 0 2px 0;
+}
+
+.survival-status-card.survived p {
+  color: #d1fae5;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.survival-status-card.eliminated {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(127, 29, 29, 0.45) 100%);
+  border: 1.5px solid #ef4444;
+}
+
+.survival-status-card.eliminated h2 {
+  color: #f87171;
+  font-size: 1.3rem;
+  font-weight: 850;
+  margin: 0 0 2px 0;
+}
+
+.survival-status-card.eliminated p {
+  color: #fee2e2;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.survival-status-card.spectator {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(120, 53, 15, 0.4) 100%);
+  border: 1.5px solid #f59e0b;
+}
+
+.survival-status-card.spectator h2 {
+  color: #fbbf24;
+  font-size: 1.3rem;
+  font-weight: 850;
+  margin: 0 0 2px 0;
+}
+
+.survival-status-card.spectator p {
+  color: #fef3c7;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.survival-icon-wrap {
+  font-size: 2.2rem;
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.survival-text-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Majority Winner Card (คำตอบที่มีคนตอบมากที่สุด) */
+.majority-winner-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid var(--gold);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.08);
+}
+
+.majority-card-header {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.majority-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  text-align: left;
+}
+
+.majority-item-row:last-child {
+  margin-bottom: 0;
+}
+
+.majority-letter-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  padding: 3px 8px;
+  margin-right: 10px;
+  flex: 0 0 auto;
+}
+
+.majority-letter-tag.tag-a { background: var(--choice-a); color: #fff; }
+.majority-letter-tag.tag-b { background: var(--choice-b); color: #fff; }
+.majority-letter-tag.tag-c { background: var(--choice-c); color: #fff; }
+.majority-letter-tag.tag-d { background: var(--choice-d); color: #fff; }
+
+.majority-text-content {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.majority-votes-pill {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 99px;
+  padding: 2px 8px;
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
+
+/* 2-Second Result Timer Track & Bar */
+.result-timer-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.result-timer-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #10b981, var(--gold));
+  border-radius: 99px;
+  transition: width 0.05s linear;
+}
+
+/* Footer Indicator */
+.result-waiting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--color-ink-2);
+  margin-top: 8px;
+}
+
+.pulse-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  animation: pulseLight 1.5s infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

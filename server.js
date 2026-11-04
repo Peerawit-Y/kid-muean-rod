@@ -35,6 +35,9 @@ app.get("/host", (req, res) => {
 });
 
 app.get("/", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   const page = (req.query.page || "").toLowerCase();
   if (page === "host") {
     return res.sendFile(path.join(__dirname, "views", "host.html"));

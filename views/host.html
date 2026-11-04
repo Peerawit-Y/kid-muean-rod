@@ -1347,16 +1347,29 @@
 
           actBtn.innerText = `เริ่มรอบที่ ${res.round + 1} (Next Round)`;
           actBtn.style.background = "var(--primary)";
-          actBtn.disabled = false;
+          // ให้เวลาดูหน้าสรุปผลประจำรอบประมาณ 2 วินาที
+          actBtn.disabled = true;
+          let viewSec = 2;
+          actBtn.innerText = `แสดงผลสรุป (${viewSec}s)...`;
+          const resultCountdown = setInterval(() => {
+            viewSec--;
+            if (viewSec > 0) {
+              actBtn.innerText = `แสดงผลสรุป (${viewSec}s)...`;
+            } else {
+              clearInterval(resultCountdown);
+              actBtn.disabled = false;
+              actBtn.innerText = `เริ่มรอบที่ ${hostSession.currentRound + 1} (ข้อถัดไป)`;
+            }
+          }, 1000);
 
           renderHostResult(res);
 
-          // เริ่มคูลดาวน์เปลี่ยนข้อหลัง Staggered Reveal เฉลยเสร็จ
+          // เริ่มคูลดาวน์เปลี่ยนข้อหลังให้เวลาดูหน้าสรุปผล 2 วินาที (หากเปิด Autopilot)
           setTimeout(() => {
             if (hostSession.currentStatus === "RESULT" && !res.isGameOver && isAutoPilotEnabled()) {
               startNextRoundCooldown();
             }
-          }, 3500);
+          }, 2000);
         }
       });
 
